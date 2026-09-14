@@ -39,8 +39,7 @@ run the server.
 | Screen | Physical size | Ratio | Link |
 |---|---|---|---|
 | Main LED wall | 10 × 5 m | 2:1 landscape | `/display/main` |
-| Future X · 1 | 0.60 × 2.70 m | 2:9 portrait | `/display/vertical-1` |
-| Future X · 2 | 0.60 × 2.70 m | 2:9 portrait | `/display/vertical-2` |
+| InnovateX | 0.60 × 2.70 m | 2:9 portrait | `/display/innovatex` |
 
 Add more from **Screens → Add screen**; enter the real metres and the platform derives the
 ratio and the design space. Sizes are editable later without losing content — widget
@@ -57,10 +56,16 @@ last content it received rather than going black.
 
 **Pick screen → upload → put on screen → widgets → preview → publish.**
 
-*Media library* — drag in PNG, JPG, WebP, GIF or MP4. Transparent PNGs stay transparent.
-Rename, preview, replace (keeps the file's place in every playlist) or delete.
+*Media library* — drag in anything the browser can play: PNG, JPG, WebP, AVIF, SVG,
+animated GIF and animated WebP, MP4, WebM, MOV and the rest. Transparent PNGs stay
+transparent, animation keeps animating. An unfamiliar container is still accepted, with a
+note that some browsers may not decode it. Rename, preview, replace (keeps the file's
+place in every playlist) or delete. Up to 2 GB per file with the server running, 300 MB
+without.
 
-*Playlist* — each item gets its own seconds; videos always play in full. Drag the handle
+*Playlist* — each item gets its own seconds; videos always play in full. Tick **Keep on
+screen** and that item stays up until you change it — nothing rotates past it, nothing
+fades. A screen holding a single image or video does this on its own. Drag the handle
 to reorder. Transitions are cut, fade or crossfade, with an adjustable length — 600–900 ms
 crossfade reads best on a wall this size. Loop and shuffle are in the transport bar.
 
@@ -79,6 +84,12 @@ nine-square control snaps a widget to a corner, edge or centre inside the safe a
 - Ctrl/⌘+D duplicates · Delete removes
 - Space plays or pauses · Ctrl/⌘+S saves the draft · Ctrl/⌘+Enter publishes
 
+The countdown works two ways. **To a date** counts down to a moment — the opening, the
+launch. **Timer** counts down a length you set, for a pitch slot or a workshop round.
+Either one has Start, Pause and Reset in the panel, and those act on the wall the instant
+you press them, without publishing. Pause freezes the numbers where they are; Start picks
+up from exactly there.
+
 The date widget does Hijri (Umm al-Qura) and Gregorian, in Arabic or English, separately
 or together. The QR code is generated on the spot — no internet, no third-party service.
 
@@ -86,6 +97,32 @@ or together. The QR code is generated on the spot — no internet, no third-part
 part of what the screens show.
 
 ---
+
+## Taking a screen somewhere else
+
+**Screens → Export as a website** turns any screen into a single `.html` file that plays on
+its own: no server, no storage, no connection. Put it on a web host, a USB stick, a kiosk
+player, or inside an existing page. It always keeps the screen's proportions — in a wider
+box it letterboxes and centres rather than stretching, so a 2:9 InnovateX layout stays 2:9
+everywhere.
+
+Two ways to pack it:
+
+- **Everything in one file** — media is embedded. Nothing else is needed, works offline.
+  The file grows with the media, so it suits stills and short clips.
+- **Link media to this server** — a small file that pulls media from this server. Good for
+  long videos, but the device has to reach the server.
+
+After the download you get an embed snippet to paste into any page:
+
+```html
+<iframe src="innovatex-display.html"
+  style="width:100%; aspect-ratio:0.6/2.7; border:0; display:block"
+  allow="autoplay; fullscreen"></iframe>
+```
+
+The exported file is a snapshot of what was published. Export again after you change
+things.
 
 ## Scheduling
 
@@ -134,5 +171,7 @@ schedule. Restoring replaces everything. With the server running, `data/` is the
   page does. Signage audio is off by design.
 - *Storage is full* — browser-local mode holds media in the browser. Run the server, or
   remove unused media.
+- *Upgrading from an earlier copy* — the old `vertical-1` screen becomes `innovatex`, so
+  update any bookmark on the player. An untouched second vertical screen is removed.
 - *Fonts* — the platform uses fonts already on the player so it never waits on a network.
   Baked-in typography belongs in your uploaded artwork.

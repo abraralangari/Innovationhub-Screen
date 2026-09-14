@@ -22,7 +22,7 @@ const DATA = path.join(ROOT, "data");
 const MEDIA = path.join(DATA, "media");
 const STATE_FILE = path.join(DATA, "state.json");
 const INDEX = path.join(ROOT, "index.html");
-const MAX_UPLOAD = 400 * 1024 * 1024;
+const MAX_UPLOAD = 2 * 1024 * 1024 * 1024;   // 2 GB per file
 
 fs.mkdirSync(MEDIA, { recursive: true });
 
@@ -139,10 +139,22 @@ const server = http.createServer(async (req, res) => {
     if (p === "/api/media" && req.method === "POST") {
       const type = (req.headers["content-type"] || "application/octet-stream").split(";")[0];
       const ext = EXT_OF[type] || path.extname(url.searchParams.get("name") || "").toLowerCase() || ".bin";
-      const body = await readBody(req);
       const name = crypto.randomBytes(8).toString("hex") + ext;
-      await fsp.writeFile(path.join(MEDIA, name), body);
-      return json(res, 200, { url: "/media/" + name, size: body.length });
+      const dest = path.join(MEDIA, name);
+      // streamed straight to disk so a two-hour 4K video never sits in memory
+      const size = await new Promise((resolve, reject) => {
+        const out = fs.createWriteStream(dest);
+        let seen = 0;
+        req.on("data", (c) => {
+          seen += c.length;
+          if (seen > MAX_UPLOAD) { req.destroy(); out.destroy(); reject(new Error("file too large")); }
+        });
+        req.on("error", reject);
+        out.on("error", reject);
+        out.on("finish", () => resolve(seen));
+        req.pipe(out);
+      }).catch(async (e) => { await fsp.unlink(dest).catch(() => {}); throw e; });
+      return json(res, 200, { url: "/media/" + name, size });
     }
 
     if (p === "/api/media" && req.method === "DELETE") {
