@@ -1,0 +1,3662 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>Signage Desk · Innovation Center</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23d9a84e'/%3E%3Crect x='8' y='10' width='16' height='12' rx='1.5' fill='none' stroke='%230c1618' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+:root {
+  --canvas: #0c1618;
+  --wall: #0a1214;
+  --panel: #122023;
+  --raise: #182d31;
+  --raise-2: #20393e;
+  --line: #23393e;
+  --line-soft: #1a2c30;
+  --text: #e8f1f0;
+  --muted: #8ba4a7;
+  --dim: #7b9897;
+  --brass: #d9a84e;
+  --brass-deep: #b98b34;
+  --live: #4fd1a5;
+  --warn: #e4796b;
+  --focus: #6fd6f2;
+  --rail-w: 232px;
+  --insp-w: 336px;
+  --top-h: 62px;
+  --r-s: 6px;
+  --r-m: 10px;
+  --r-l: 16px;
+  --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", "Helvetica Neue", Arial, sans-serif;
+  --arabic: "Segoe UI", "Noto Naskh Arabic", "Dubai", Tahoma, sans-serif;
+  --shadow: 0 18px 48px -24px rgba(0, 0, 0, .9);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--canvas);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 14px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+}
+
+body[dir="rtl"] { font-family: var(--arabic); }
+
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+::selection { background: var(--brass); color: #10191a; }
+
+/* ---------- app frame ---------- */
+#app {
+  display: grid;
+  grid-template-columns: var(--rail-w) minmax(0, 1fr) var(--insp-w);
+  grid-template-rows: var(--top-h) minmax(0, 1fr);
+  grid-template-areas: "top top top" "rail stage insp";
+  height: 100vh;
+}
+
+/* ---------- top bar ---------- */
+.top {
+  grid-area: top;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  overflow: hidden;
+  padding-inline: 16px;
+  background: linear-gradient(180deg, #142427, #0f1e21);
+  border-bottom: 1px solid var(--line);
+  z-index: 30;
+}
+
+.brandmark {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(var(--rail-w) - 32px);
+  flex: none;
+}
+
+.brandmark .glyph {
+  width: 30px; height: 30px;
+  border-radius: 7px;
+  background: linear-gradient(150deg, var(--brass), #8a6320);
+  position: relative;
+  flex: none;
+}
+.brandmark .glyph::after {
+  content: "";
+  position: absolute;
+  inset: 8px 7px;
+  border: 1.5px solid rgba(12, 22, 24, .85);
+  border-radius: 2px;
+}
+.brandmark b { font-weight: 600; letter-spacing: -.2px; font-size: 14px; display: block; }
+.brandmark span { color: var(--dim); font-size: 11.5px; display: block; margin-top: -2px; }
+
+.screen-picker {
+  display: flex;
+  max-width: 40vw;
+  overflow-x: auto;
+  scrollbar-width: none;
+  align-items: center;
+  gap: 2px;
+  background: var(--wall);
+  border: 1px solid var(--line);
+  border-radius: var(--r-m);
+  padding: 3px;
+}
+.screen-picker button {
+  background: none;
+  border: 0;
+  color: var(--muted);
+  padding: 6px 12px;
+  border-radius: 7px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+.screen-picker button:hover { color: var(--text); }
+.screen-picker button[aria-pressed="true"] {
+  background: var(--raise);
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+.screen-picker .ratio { font-size: 11px; color: var(--dim); font-variant-numeric: tabular-nums; }
+
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); flex: none; }
+.dot.on { background: var(--live); box-shadow: 0 0 0 3px rgba(79, 209, 165, .16); }
+.dot.off { background: var(--warn); }
+
+.status-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 12px 5px 10px;
+  color: var(--muted);
+  background: rgba(0, 0, 0, .2);
+  white-space: nowrap;
+}
+
+.top .spacer { flex: 1; }
+
+/* ---------- buttons ---------- */
+.btn {
+  background: var(--raise);
+  border: 1px solid var(--line);
+  color: var(--text);
+  padding: 8px 14px;
+  border-radius: var(--r-s);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: background .12s ease, border-color .12s ease;
+  white-space: nowrap;
+}
+.btn:hover { background: var(--raise-2); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost { background: transparent; }
+.btn.ghost:hover { background: var(--raise); }
+.btn.quiet { background: transparent; border-color: transparent; color: var(--muted); }
+.btn.quiet:hover { color: var(--text); background: var(--raise); }
+.btn.primary {
+  background: linear-gradient(180deg, var(--brass), var(--brass-deep));
+  border-color: #8d6a25;
+  color: #14211f;
+  font-weight: 600;
+}
+.btn.primary:hover { filter: brightness(1.07); }
+.btn.danger { color: var(--warn); }
+.btn.danger:hover { background: rgba(228, 121, 107, .12); }
+.btn[disabled] { opacity: .42; pointer-events: none; }
+.btn.sm { padding: 5px 9px; font-size: 12.5px; }
+.btn.icon { padding: 7px; }
+.pulse-live { animation: pulseLive 2.4s ease-in-out infinite; }
+.unpub-dot { width: 7px; height: 7px; border-radius: 50%; background: #15211f; flex: none; }
+@keyframes pulseLive { 50% { box-shadow: 0 0 0 6px rgba(217, 168, 78, 0); } }
+
+/* ---------- rail ---------- */
+.rail {
+  grid-area: rail;
+  background: var(--panel);
+  border-inline-end: 1px solid var(--line);
+  padding: 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+}
+.rail button {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  background: none;
+  border: 0;
+  color: var(--muted);
+  padding: 9px 11px;
+  border-radius: var(--r-s);
+  cursor: pointer;
+  text-align: start;
+  position: relative;
+}
+.rail button:hover { background: var(--raise); color: var(--text); }
+.rail button[aria-current="page"] { background: var(--raise); color: var(--text); }
+.rail button[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  inset-inline-start: 0;
+  top: 9px; bottom: 9px;
+  width: 2px;
+  background: var(--brass);
+  border-radius: 2px;
+}
+.rail svg { width: 17px; height: 17px; flex: none; opacity: .9; }
+.rail .count {
+  margin-inline-start: auto;
+  font-size: 11px;
+  color: var(--dim);
+  font-variant-numeric: tabular-nums;
+}
+.rail .foot {
+  margin-top: auto;
+  padding: 10px 11px 2px;
+  border-top: 1px solid var(--line-soft);
+  color: var(--dim);
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+.rail .foot code { color: var(--muted); font-size: 11px; }
+
+/* ---------- stage ---------- */
+.stage-wrap {
+  grid-area: stage;
+  background:
+    radial-gradient(120% 80% at 50% 0%, #12211f 0%, var(--wall) 62%),
+    var(--wall);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  position: relative;
+}
+.stage-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--muted);
+  flex: none;
+}
+.stage-head .title { color: var(--text); font-weight: 600; }
+.stage-head .meta { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+.stage-head .sp { flex: 1; }
+
+.stage-area {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  padding: 26px 30px;
+  position: relative;
+}
+
+.screen-frame { position: relative; }
+.screen-frame .tick {
+  position: absolute;
+  color: var(--dim);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  letter-spacing: .02em;
+}
+.screen-frame .tick.top { top: -20px; inset-inline-start: 0; inset-inline-end: 0; text-align: center; }
+.screen-frame .tick.top::before,
+.screen-frame .tick.top::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: calc(50% - 46px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--line));
+}
+.screen-frame .tick.top::before { inset-inline-start: 0; }
+.screen-frame .tick.top::after { inset-inline-end: 0; transform: scaleX(-1); }
+.screen-frame .tick.side {
+  inset-inline-end: -14px;
+  top: 50%;
+  transform: translate(50%, -50%) rotate(90deg);
+}
+
+.screen {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+  box-shadow:
+    0 0 0 1px #2c4145,
+    0 0 0 8px #0e1a1c,
+    0 0 0 9px #223339,
+    0 40px 80px -40px rgba(0, 0, 0, .95),
+    0 0 120px -40px rgba(79, 209, 165, .18);
+}
+.screen.is-drop { box-shadow: 0 0 0 2px var(--brass), 0 0 0 9px #0e1a1c; }
+.screen-reflection {
+  position: absolute;
+  inset-inline: 8px;
+  top: 100%;
+  height: 46px;
+  background: linear-gradient(180deg, rgba(120, 190, 190, .10), transparent 75%);
+  filter: blur(6px);
+  pointer-events: none;
+}
+
+/* design-space host: content is authored at real screen coordinates and scaled */
+.design {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  transform-origin: top left;
+  direction: ltr;
+}
+
+.layer { position: absolute; inset: 0; }
+.layer img, .layer video { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.layer.fade { transition: opacity var(--tdur, 700ms) ease; }
+
+.guides { position: absolute; inset: 0; pointer-events: none; }
+.guides .safe { position: absolute; inset: 5%; border: 1px dashed rgba(217, 168, 78, .38); }
+.guides .cx, .guides .cy { position: absolute; background: rgba(111, 214, 242, .30); }
+.guides .cx { left: 50%; top: 0; bottom: 0; width: 1px; }
+.guides .cy { top: 50%; left: 0; right: 0; height: 1px; }
+.guides .grid {
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, .07) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, .07) 1px, transparent 1px);
+}
+
+/* widgets */
+.wg { position: absolute; display: flex; overflow: hidden; }
+.wg-inner { width: 100%; height: 100%; display: flex; }
+.wg .wg-body { width: 100%; display: flex; flex-direction: column; justify-content: center; }
+.wg.sel { outline: 2px solid var(--brass); outline-offset: 0; }
+.wg.editable { cursor: move; }
+.wg.locked { cursor: default; }
+.handle {
+  position: absolute;
+  width: 11px; height: 11px;
+  background: var(--brass);
+  border: 1.5px solid #101c1e;
+  border-radius: 2px;
+}
+.handle.nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.handle.ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.handle.sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+.handle.se { bottom: -6px; right: -6px; cursor: nwse-resize; }
+
+.cd-row { display: flex; width: 100%; }
+.cd-cell { flex: 1; display: flex; flex-direction: column; align-items: center; }
+.cd-num { font-variant-numeric: tabular-nums; line-height: 1.02; }
+.cd-lab { opacity: .62; line-height: 1.6; }
+
+.empty-screen {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  color: #3e565a;
+  text-align: center;
+  padding: 8%;
+}
+.empty-screen b { color: #6d8b8e; font-weight: 500; }
+
+/* transport */
+.transport {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px 14px;
+  border-top: 1px solid var(--line-soft);
+  background: rgba(8, 16, 17, .55);
+}
+.transport .now {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--muted);
+  overflow: hidden;
+}
+.transport .now b { color: var(--text); font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress { flex: 1; height: 3px; background: var(--line-soft); border-radius: 2px; overflow: hidden; min-width: 60px; }
+.progress i { display: block; height: 100%; background: var(--brass); width: 0; }
+
+/* ---------- inspector ---------- */
+.insp {
+  grid-area: insp;
+  background: var(--panel);
+  border-inline-start: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+.insp-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--line-soft);
+  flex: none;
+}
+.insp-head h2 { margin: 0; font-size: 13.5px; font-weight: 600; }
+.insp-head .sp { flex: 1; }
+.insp-body { overflow-y: auto; padding: 12px 14px 28px; flex: 1; }
+
+.field { margin-bottom: 12px; }
+.field > label, .flabel {
+  display: block;
+  color: var(--muted);
+  margin-bottom: 5px;
+  font-size: 12.5px;
+}
+input[type="text"], input[type="number"], input[type="url"], input[type="date"],
+input[type="time"], input[type="datetime-local"], select, textarea {
+  width: 100%;
+  background: var(--wall);
+  border: 1px solid var(--line);
+  border-radius: var(--r-s);
+  padding: 7px 9px;
+  color: var(--text);
+}
+input[type="color"] {
+  width: 100%; height: 32px; padding: 2px;
+  background: var(--wall); border: 1px solid var(--line); border-radius: var(--r-s); cursor: pointer;
+}
+textarea { resize: vertical; min-height: 64px; }
+input[type="range"] { width: 100%; accent-color: var(--brass); }
+input[type="checkbox"] { accent-color: var(--brass); width: 15px; height: 15px; }
+select { appearance: none; background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%); background-position: right 12px center, right 7px center; background-size: 5px 5px, 5px 5px; background-repeat: no-repeat; padding-inline-end: 24px; }
+body[dir="rtl"] select { background-position: left 7px center, left 12px center; background-image: linear-gradient(135deg, transparent 50%, var(--muted) 50%), linear-gradient(45deg, var(--muted) 50%, transparent 50%); padding-inline-end: 9px; padding-inline-start: 24px; }
+
+.row { display: flex; gap: 8px; }
+.row > * { flex: 1; min-width: 0; }
+.inline { display: flex; align-items: center; gap: 8px; }
+.inline label { margin: 0; }
+.sect {
+  border-top: 1px solid var(--line-soft);
+  margin: 16px -14px 12px;
+  padding: 12px 14px 0;
+}
+.sect > h3 {
+  margin: 0 0 10px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--muted);
+}
+.hint { color: var(--dim); font-size: 12px; line-height: 1.5; }
+
+.seg { display: flex; background: var(--wall); border: 1px solid var(--line); border-radius: var(--r-s); padding: 2px; gap: 2px; }
+.seg button {
+  flex: 1;
+  background: none; border: 0; color: var(--muted);
+  padding: 5px 4px; border-radius: 4px; cursor: pointer; font-size: 12.5px;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.seg button:hover { color: var(--text); }
+.seg button[aria-pressed="true"] { background: var(--raise-2); color: var(--text); }
+
+.align-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.align-grid button {
+  height: 30px; border-radius: 5px; border: 1px solid var(--line);
+  background: var(--wall); cursor: pointer; display: flex; padding: 4px;
+}
+.align-grid button:hover { border-color: var(--brass); }
+.align-grid i { width: 9px; height: 5px; background: var(--muted); border-radius: 1px; display: block; }
+.align-grid button:hover i { background: var(--brass); }
+
+/* ---------- lists & cards ---------- */
+.panel-list { display: flex; flex-direction: column; gap: 6px; }
+.item {
+  display: flex; align-items: center; gap: 10px;
+  background: var(--wall);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-s);
+  padding: 7px 9px;
+  cursor: pointer;
+}
+.item:hover { border-color: var(--line); }
+.item.sel { border-color: var(--brass); background: #17262a; }
+.item .thumb {
+  width: 42px; height: 30px; border-radius: 3px; background: #000 center/cover no-repeat;
+  flex: none; position: relative; overflow: hidden;
+}
+.item .thumb .vid {
+  position: absolute; inset-inline-end: 2px; bottom: 2px;
+  background: rgba(0, 0, 0, .7); border-radius: 2px; padding: 0 3px; font-size: 9px; color: #d5e5e4;
+}
+.item .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .sub { color: var(--dim); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+.item .grip { color: var(--dim); cursor: grab; touch-action: none; padding: 2px; }
+.item.dragging { opacity: .55; border-color: var(--brass); }
+.item.hidden-w .nm { opacity: .45; text-decoration: line-through; }
+
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-m);
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color .12s ease;
+}
+.card:hover { border-color: var(--line); }
+.card.sel { border-color: var(--brass); }
+.card .ph {
+  aspect-ratio: 16 / 10;
+  background: #000 center/contain no-repeat;
+  position: relative;
+  border-bottom: 1px solid var(--line-soft);
+  background-image:
+    linear-gradient(45deg, #101b1d 25%, transparent 25%, transparent 75%, #101b1d 75%),
+    linear-gradient(45deg, #101b1d 25%, transparent 25%, transparent 75%, #101b1d 75%);
+  background-size: 14px 14px;
+  background-position: 0 0, 7px 7px;
+}
+.card .ph .img { position: absolute; inset: 0; background: center/contain no-repeat; }
+.card .ph .tag {
+  position: absolute; top: 6px; inset-inline-start: 6px;
+  background: rgba(6, 12, 13, .78); border-radius: 4px; padding: 1px 6px; font-size: 10.5px; color: #cfe2e1;
+}
+.card .cap { padding: 8px 10px; }
+.card .cap .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.card .cap .sub { color: var(--dim); font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+.page { padding: 20px 24px 40px; overflow-y: auto; height: 100%; }
+.page h1 { font-size: 19px; font-weight: 600; margin: 0 0 3px; letter-spacing: -.2px; }
+.page .lede { color: var(--muted); margin: 0 0 20px; max-width: 62ch; }
+.page-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 18px; flex-wrap: wrap; }
+.page-head .sp { flex: 1; }
+
+.screen-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 14px; }
+.screen-card {
+  background: var(--panel); border: 1px solid var(--line-soft);
+  border-radius: var(--r-l); padding: 16px; display: flex; flex-direction: column; gap: 12px;
+}
+.screen-card.active { border-color: var(--brass); }
+.screen-card .mini {
+  background: #000; border: 1px solid var(--line); border-radius: 4px;
+  align-self: center; position: relative; overflow: hidden;
+}
+.screen-card .url {
+  display: flex; align-items: center; gap: 6px;
+  background: var(--wall); border: 1px solid var(--line-soft); border-radius: var(--r-s);
+  padding: 6px 8px; color: var(--muted); font-size: 12px; overflow: hidden;
+}
+.screen-card .url code { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; direction: ltr; text-align: start; }
+
+.tbl { width: 100%; border-collapse: collapse; }
+.tbl th {
+  text-align: start; color: var(--muted); font-weight: 500; font-size: 12.5px;
+  padding: 6px 10px; border-bottom: 1px solid var(--line);
+}
+.tbl td { padding: 9px 10px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
+.tbl tr.off td { opacity: .5; }
+.tbl .now-badge { color: var(--live); font-size: 11.5px; }
+
+.drop {
+  border: 1.5px dashed var(--line);
+  border-radius: var(--r-l);
+  padding: 26px;
+  text-align: center;
+  color: var(--muted);
+  background: rgba(0, 0, 0, .15);
+}
+.drop.hot { border-color: var(--brass); color: var(--text); background: rgba(217, 168, 78, .07); }
+
+.empty-state { padding: 34px 20px; text-align: center; color: var(--dim); }
+.empty-state b { display: block; color: var(--muted); font-weight: 500; margin-bottom: 4px; }
+
+/* ---------- modal & toast ---------- */
+.scrim {
+  position: fixed; inset: 0; background: rgba(4, 9, 10, .72);
+  display: grid; place-items: center; z-index: 60; padding: 20px;
+  backdrop-filter: blur(2px);
+}
+.modal {
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: var(--r-l); box-shadow: var(--shadow);
+  width: min(560px, 100%); max-height: 86vh; display: flex; flex-direction: column;
+}
+.modal.wide { width: min(min(1100px, 94vw), 100%); }
+.modal header { padding: 14px 16px; border-bottom: 1px solid var(--line-soft); display: flex; align-items: center; gap: 10px; }
+.modal header h2 { margin: 0; font-size: 15px; font-weight: 600; }
+.modal header .sp { flex: 1; }
+.modal .mbody { padding: 16px; overflow: auto; }
+.modal footer { padding: 12px 16px; border-top: 1px solid var(--line-soft); display: flex; gap: 8px; justify-content: flex-end; }
+
+#toasts {
+  position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; gap: 8px; z-index: 90; align-items: center;
+}
+.toast {
+  background: #1a2e32; border: 1px solid var(--line); border-radius: 999px;
+  padding: 9px 16px; box-shadow: var(--shadow); display: flex; align-items: center; gap: 9px;
+}
+.toast.err { border-color: var(--warn); color: #ffd9d3; }
+
+/* ---------- display page ---------- */
+body.display-mode { background: #000; cursor: none; overflow: hidden; }
+#display-root { position: fixed; inset: 0; background: #000; overflow: hidden; }
+#display-root .screen { box-shadow: none; }
+#conn-flag {
+  position: fixed; top: 0; inset-inline-start: 0;
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--warn); opacity: 0; transition: opacity .4s ease; pointer-events: none;
+}
+#conn-flag.show { opacity: .55; }
+
+@media (max-width: 1180px) {
+  #app { grid-template-columns: 64px minmax(0, 1fr) 300px; }
+  .rail button span.lbl, .rail .foot, .brandmark b, .brandmark span { display: none; }
+  .rail button { justify-content: center; }
+  .brandmark { width: 42px; }
+}
+@media (max-width: 880px) {
+  #app { grid-template-columns: 64px minmax(0, 1fr); grid-template-areas: "top top" "rail stage"; }
+  .insp { position: fixed; inset-block: var(--top-h) 0; inset-inline-end: 0; width: 300px; z-index: 40; box-shadow: var(--shadow); transform: translateX(100%); transition: transform .18s ease; }
+  body[dir="rtl"] .insp { transform: translateX(-100%); }
+  .insp.open { transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+</style>
+</head>
+<body>
+<noscript>This control desk needs JavaScript enabled.</noscript>
+<script>
+/* ============================================================
+   QR encoder — byte mode, ECC level L/M, versions 1..20.
+   Written against ISO/IEC 18004. Returns a boolean matrix.
+   ============================================================ */
+const QR = (() => {
+  const BLOCKS = {
+    L: [[[1,26,19]],[[1,44,34]],[[1,70,55]],[[1,100,80]],[[1,134,108]],[[2,86,68]],[[2,98,78]],[[2,121,97]],[[2,146,116]],[[2,86,68],[2,87,69]],[[4,101,81]],[[2,116,92],[2,117,93]],[[4,133,107]],[[3,145,115],[1,146,116]],[[5,109,87],[1,110,88]],[[5,122,98],[1,123,99]],[[1,135,107],[5,136,108]],[[5,150,120],[1,151,121]],[[3,141,113],[4,142,114]],[[3,135,107],[5,136,108]]],
+    M: [[[1,26,16]],[[1,44,28]],[[1,70,44]],[[2,50,32]],[[2,67,43]],[[4,43,27]],[[4,49,31]],[[2,60,38],[2,61,39]],[[3,58,36],[2,59,37]],[[4,69,43],[1,70,44]],[[1,80,50],[4,81,51]],[[6,58,36],[2,59,37]],[[8,59,37],[1,60,38]],[[4,64,40],[5,65,41]],[[5,65,41],[5,66,42]],[[7,73,45],[3,74,46]],[[10,74,46],[1,75,47]],[[9,69,43],[4,70,44]],[[3,70,44],[11,71,45]],[[3,67,41],[13,68,42]]]
+  };
+  const ALIGN = [[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90]];
+  const ECL_BITS = { L: 1, M: 0 };
+
+  // Galois field 2^8, primitive polynomial 0x11D
+  const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  (() => {
+    let x = 1;
+    for (let i = 0; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+    for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  })();
+  const gmul = (a, b) => (a === 0 || b === 0) ? 0 : EXP[LOG[a] + LOG[b]];
+
+  function generatorPoly(deg) {
+    let poly = [1];
+    for (let i = 0; i < deg; i++) {
+      const next = new Array(poly.length + 1).fill(0);
+      for (let j = 0; j < poly.length; j++) {
+        next[j] ^= gmul(poly[j], 1);
+        next[j + 1] ^= gmul(poly[j], EXP[i]);
+      }
+      poly = next;
+    }
+    return poly;
+  }
+
+  function ecBytes(data, ecLen) {
+    const gen = generatorPoly(ecLen);
+    const res = new Array(data.length + ecLen).fill(0);
+    for (let i = 0; i < data.length; i++) res[i] = data[i];
+    for (let i = 0; i < data.length; i++) {
+      const factor = res[i];
+      if (factor === 0) continue;
+      for (let j = 0; j < gen.length; j++) res[i + j] ^= gmul(gen[j], factor);
+    }
+    return res.slice(data.length);
+  }
+
+  const utf8 = (str) => Array.from(new TextEncoder().encode(str));
+
+  function pickVersion(byteLen, ecl) {
+    for (let v = 1; v <= 20; v++) {
+      const groups = BLOCKS[ecl][v - 1];
+      let capacity = 0;
+      for (const [count, , dataCw] of groups) capacity += count * dataCw;
+      const header = 4 + (v < 10 ? 8 : 16);
+      if (capacity * 8 >= header + byteLen * 8) return v;
+    }
+    return null;
+  }
+
+  function buildCodewords(bytes, version, ecl) {
+    const groups = BLOCKS[ecl][version - 1];
+    let totalData = 0;
+    for (const [count, , dataCw] of groups) totalData += count * dataCw;
+
+    const bits = [];
+    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+    push(4, 4);                                     // byte mode
+    push(bytes.length, version < 10 ? 8 : 16);      // character count
+    for (const b of bytes) push(b, 8);
+    for (let i = 0; i < 4 && bits.length < totalData * 8; i++) bits.push(0); // terminator
+    while (bits.length % 8) bits.push(0);
+
+    const data = [];
+    for (let i = 0; i < bits.length; i += 8) {
+      let b = 0;
+      for (let j = 0; j < 8; j++) b = (b << 1) | bits[i + j];
+      data.push(b);
+    }
+    const PAD = [0xec, 0x11];
+    let p = 0;
+    while (data.length < totalData) data.push(PAD[p++ % 2]);
+
+    // split into blocks, compute EC, interleave
+    const dataBlocks = [], ecBlocks = [];
+    let offset = 0;
+    for (const [count, totalCw, dataCw] of groups) {
+      for (let i = 0; i < count; i++) {
+        const blk = data.slice(offset, offset + dataCw);
+        offset += dataCw;
+        dataBlocks.push(blk);
+        ecBlocks.push(ecBytes(blk, totalCw - dataCw));
+      }
+    }
+    const out = [];
+    const maxData = Math.max(...dataBlocks.map(b => b.length));
+    for (let i = 0; i < maxData; i++)
+      for (const blk of dataBlocks) if (i < blk.length) out.push(blk[i]);
+    const maxEc = Math.max(...ecBlocks.map(b => b.length));
+    for (let i = 0; i < maxEc; i++)
+      for (const blk of ecBlocks) if (i < blk.length) out.push(blk[i]);
+    return out;
+  }
+
+  const MASKS = [
+    (i, j) => (i + j) % 2 === 0,
+    (i) => i % 2 === 0,
+    (i, j) => j % 3 === 0,
+    (i, j) => (i + j) % 3 === 0,
+    (i, j) => (Math.floor(i / 2) + Math.floor(j / 3)) % 2 === 0,
+    (i, j) => ((i * j) % 2) + ((i * j) % 3) === 0,
+    (i, j) => (((i * j) % 2) + ((i * j) % 3)) % 2 === 0,
+    (i, j) => (((i + j) % 2) + ((i * j) % 3)) % 2 === 0
+  ];
+
+  function bch(value, poly, polyBits) {
+    let v = value << (polyBits - 1);
+    while (bitLength(v) >= polyBits) v ^= poly << (bitLength(v) - polyBits);
+    return (value << (polyBits - 1)) | v;
+  }
+  const bitLength = (v) => { let n = 0; while (v !== 0) { n++; v >>>= 1; } return n; };
+
+  function makeMatrix(version, ecl, codewords, mask) {
+    const size = version * 4 + 17;
+    const m = Array.from({ length: size }, () => new Array(size).fill(null)); // null = free
+    const set = (r, c, v) => { m[r][c] = v; };
+
+    const finder = (r, c) => {
+      for (let dr = -1; dr <= 7; dr++) for (let dc = -1; dc <= 7; dc++) {
+        const rr = r + dr, cc = c + dc;
+        if (rr < 0 || cc < 0 || rr >= size || cc >= size) continue;
+        const inner = dr >= 0 && dr <= 6 && dc >= 0 && dc <= 6;
+        const dark = inner && ((dr === 0 || dr === 6 || dc === 0 || dc === 6) ||
+                               (dr >= 2 && dr <= 4 && dc >= 2 && dc <= 4));
+        set(rr, cc, dark);
+      }
+    };
+    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+
+    for (let i = 8; i < size - 8; i++) { // timing
+      const dark = i % 2 === 0;
+      set(6, i, dark); set(i, 6, dark);
+    }
+
+    for (const r of ALIGN[version - 1]) for (const c of ALIGN[version - 1]) {
+      if ((r <= 8 && c <= 8) || (r <= 8 && c >= size - 9) || (r >= size - 9 && c <= 8)) continue;
+      for (let dr = -2; dr <= 2; dr++) for (let dc = -2; dc <= 2; dc++)
+        set(r + dr, c + dc, Math.max(Math.abs(dr), Math.abs(dc)) !== 1);
+    }
+
+    set(size - 8, 8, true); // dark module
+
+    // reserve format areas
+    const reserved = [];
+    for (let i = 0; i < 9; i++) { reserved.push([8, i], [i, 8]); }
+    for (let i = 0; i < 8; i++) { reserved.push([8, size - 1 - i], [size - 1 - i, 8]); }
+    for (const [r, c] of reserved) if (m[r][c] === null) m[r][c] = false;
+
+    if (version >= 7) {
+      const vinfo = bch(version, 0x1f25, 13);
+      for (let i = 0; i < 18; i++) {
+        const bit = ((vinfo >> i) & 1) === 1;
+        const r = Math.floor(i / 3), c = i % 3;
+        set(size - 11 + c, r, bit); set(r, size - 11 + c, bit);
+      }
+    }
+
+    // mark which cells are function modules (before data placement)
+    const isFunction = m.map(row => row.map(v => v !== null));
+
+    // data placement, upward/downward zigzag from bottom-right
+    let bitIndex = 0;
+    const nextBit = () => {
+      if (bitIndex >= codewords.length * 8) return false;
+      const b = (codewords[bitIndex >> 3] >> (7 - (bitIndex & 7))) & 1;
+      bitIndex++;
+      return b === 1;
+    };
+    let upward = true;
+    for (let col = size - 1; col > 0; col -= 2) {
+      if (col === 6) col--; // skip vertical timing column
+      for (let k = 0; k < size; k++) {
+        const row = upward ? size - 1 - k : k;
+        for (let d = 0; d < 2; d++) {
+          const c = col - d;
+          if (isFunction[row][c]) continue;
+          let bit = nextBit();
+          if (MASKS[mask](row, c)) bit = !bit;
+          m[row][c] = bit;
+        }
+      }
+      upward = !upward;
+    }
+
+    // format information
+    const fmt = bch((ECL_BITS[ecl] << 3) | mask, 0x537, 11) ^ 0x5412;
+    for (let i = 0; i < 15; i++) {
+      const bit = ((fmt >> i) & 1) === 1;
+      // column 8, top-left downward then bottom-left upward
+      if (i < 6) set(i, 8, bit);
+      else if (i < 8) set(i + 1, 8, bit);
+      else set(size - 15 + i, 8, bit);
+      // row 8, right side then top-left
+      if (i < 8) set(8, size - 1 - i, bit);
+      else if (i === 8) set(8, 7, bit);
+      else set(8, 14 - i, bit);
+    }
+    return { matrix: m.map(r => r.map(Boolean)), isFunction };
+  }
+
+  function penalty(m) {
+    const n = m.length;
+    let score = 0;
+    // rule 1: runs of 5+
+    for (let i = 0; i < n; i++) {
+      for (const line of [m[i], m.map(r => r[i])]) {
+        let run = 1;
+        for (let j = 1; j < n; j++) {
+          if (line[j] === line[j - 1]) run++;
+          else { if (run >= 5) score += 3 + (run - 5); run = 1; }
+        }
+        if (run >= 5) score += 3 + (run - 5);
+      }
+    }
+    // rule 2: 2x2 blocks
+    for (let i = 0; i < n - 1; i++) for (let j = 0; j < n - 1; j++)
+      if (m[i][j] === m[i][j + 1] && m[i][j] === m[i + 1][j] && m[i][j] === m[i + 1][j + 1]) score += 3;
+    // rule 3: finder-like patterns
+    const pat1 = [true, false, true, true, true, false, true, false, false, false, false];
+    const pat2 = [false, false, false, false, true, false, true, true, true, false, true];
+    const match = (line, start, pat) => pat.every((v, k) => line[start + k] === v);
+    for (let i = 0; i < n; i++) {
+      const row = m[i], col = m.map(r => r[i]);
+      for (let j = 0; j + 11 <= n; j++) {
+        if (match(row, j, pat1) || match(row, j, pat2)) score += 40;
+        if (match(col, j, pat1) || match(col, j, pat2)) score += 40;
+      }
+    }
+    // rule 4: dark module balance
+    let dark = 0;
+    for (const row of m) for (const v of row) if (v) dark++;
+    const ratio = (dark * 100) / (n * n);
+    score += Math.floor(Math.abs(ratio - 50) / 5) * 10;
+    return score;
+  }
+
+  /** Returns { size, matrix } where matrix[row][col] is true for dark modules. */
+  function encode(text, ecl = 'M') {
+    const bytes = utf8(String(text));
+    const version = pickVersion(bytes.length, ecl);
+    if (!version) throw new Error('QR: content too long');
+    const codewords = buildCodewords(bytes, version, ecl);
+    let best = null, bestScore = Infinity;
+    for (let mask = 0; mask < 8; mask++) {
+      const { matrix } = makeMatrix(version, ecl, codewords, mask);
+      const s = penalty(matrix);
+      if (s < bestScore) { bestScore = s; best = matrix; }
+    }
+    return { size: best.length, matrix: best, version };
+  }
+
+  /** Renders to an SVG path string sized to `modules` units, with quiet zone. */
+  function toSvg(text, opts = {}) {
+    const { ecl = 'M', quiet = 2, dark = '#000', light = '#fff', radius = 0 } = opts;
+    const { size, matrix } = encode(text, ecl);
+    const total = size + quiet * 2;
+    let path = '';
+    for (let r = 0; r < size; r++) for (let c = 0; c < size; c++)
+      if (matrix[r][c]) path += `M${c + quiet} ${r + quiet}h1v1h-1z`;
+    return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" shape-rendering="crispEdges" preserveAspectRatio="xMidYMid meet">` +
+      `<rect width="${total}" height="${total}" rx="${radius}" fill="${light}"/>` +
+      `<path d="${path}" fill="${dark}"/></svg>`;
+  }
+
+  return { encode, toSvg };
+})();
+
+if (typeof module !== 'undefined') module.exports = QR;
+
+
+/* ============================================================
+   Bilingual strings. Arabic entries drive a full RTL layout.
+   ============================================================ */
+const STRINGS = {
+  en: {
+    appName: "Signage Desk", appSub: "Innovation Center",
+    screens: "Screens", media: "Media library", playlist: "Playlist", widgets: "Widgets",
+    schedule: "Schedule", settings: "Settings",
+    online: "On air", offline: "Not connected", connecting: "Waiting for screen",
+    preview: "Preview", saveDraft: "Save draft", publish: "Publish", published: "Published",
+    draftSaved: "Draft saved", publishedTo: "Published to {name}",
+    unpublished: "Draft changes not published", allPublished: "Everything published",
+    openDisplay: "Open display", copyUrl: "Copy link", copied: "Link copied",
+    displayUrl: "Display link", lastPublished: "Last published", never: "Never",
+    addScreen: "Add screen", removeScreen: "Remove screen", screenName: "Screen name",
+    width_m: "Width (m)", height_m: "Height (m)", profile: "Orientation",
+    landscape: "Landscape", portrait: "Portrait", ratio: "Ratio",
+    mainScreen: "Main LED wall", vertical: "Vertical screen",
+    upload: "Upload media", uploadHint: "Drop images or MP4 videos here, or browse.",
+    uploadTypes: "PNG, JPG, WebP, GIF and MP4. Transparent PNGs keep their transparency.",
+    browse: "Browse files", rename: "Rename", replace: "Replace file", remove: "Delete",
+    addToScreen: "Put on screen", addToPlaylist: "Add to playlist", duplicate: "Duplicate",
+    mediaEmpty: "No media yet", mediaEmptyHint: "Upload the finished artwork or video you want on the wall.",
+    image: "Image", video: "Video", seconds: "seconds", duration: "Duration",
+    fit: "Fit", fill: "Fill", stretch: "Stretch", original: "Original size",
+    fitMode: "How it sits on the screen",
+    fitHelp: "Fit shows the whole design with bars. Fill covers the screen and may crop edges.",
+    playlists: "Playlists", newPlaylist: "New playlist", playlistName: "Playlist name",
+    activePlaylist: "Playing now", items: "items", empty: "Empty",
+    play: "Play", pause: "Pause", next: "Next", prev: "Previous", loop: "Loop", shuffle: "Shuffle",
+    transition: "Transition", cut: "Cut", fade: "Fade", crossfade: "Crossfade",
+    transitionLen: "Transition length",
+    fullVideo: "Full video",
+    playlistEmpty: "Nothing on this screen yet",
+    playlistEmptyHint: "Add media from the library to start the rotation.",
+    addWidget: "Add widget", countdown: "Countdown", clock: "Clock", date: "Date",
+    text: "Text", qr: "QR code", logo: "Logo",
+    targetDate: "Target date", targetTime: "Target time", labels: "Labels",
+    days: "Days", hours: "Hours", minutes: "Minutes", secondsL: "Seconds",
+    hourFormat: "Hour format", h12: "12-hour", h24: "24-hour", showSeconds: "Show seconds",
+    calendar: "Calendar", gregorian: "Gregorian", hijri: "Hijri", both: "Both",
+    language: "Language", english: "English", arabic: "العربية",
+    dateStyle: "Date style", long: "Long", short: "Short",
+    content: "Text", font: "Font", size: "Size", weight: "Weight", align: "Alignment",
+    color: "Color", background: "Background", opacity: "Opacity", transparency: "Transparency",
+    radius: "Corner radius", spacing: "Spacing", letterSpacing: "Letter spacing",
+    url: "Link", qrUrlHint: "The screen shows a scannable code for this link.",
+    logoSource: "Logo image", pickImage: "Choose image", noLogo: "No image chosen",
+    position: "Position", sizeLabel: "Size", alignTo: "Snap to",
+    lock: "Lock", unlock: "Unlock", hide: "Hide", show: "Show", del: "Delete",
+    widgetsEmpty: "No widgets on this screen",
+    widgetsEmptyHint: "Widgets sit on top of the media — a countdown, clock, QR code or logo.",
+    guides: "Guides", safeArea: "Safe area", centerLines: "Center lines", grid: "Grid",
+    showGuides: "Show guides",
+    starts: "Starts", ends: "Ends", repeat: "Repeat", once: "Once", daily: "Every day",
+    weekdays: "Sun–Thu", weekends: "Fri–Sat", customDays: "Chosen days",
+    newSchedule: "New schedule block", scheduleName: "Block name", playsNow: "On now",
+    scheduleEmpty: "No schedule blocks",
+    scheduleEmptyHint: "Without a block the screen always plays the selected playlist.",
+    scheduleHelp: "Blocks are checked in order. The first match wins; otherwise the selected playlist plays.",
+    enabled: "Enabled", timezone: "Time zone",
+    liveControl: "Live control", reloadScreen: "Reload screen", blackout: "Blackout",
+    blackoutOn: "Screen blacked out", showContent: "Show content",
+    liveEdit: "Publish while editing", liveEditHint: "Every change goes to the wall immediately. Use during an event.",
+    nowPlaying: "On screen", nothingPlaying: "Nothing playing",
+    confirmDelete: "Delete {name}?", confirmDeleteMedia: "It will be removed from every playlist using it.",
+    cancel: "Cancel", save: "Save", close: "Close", apply: "Apply", add: "Add", done: "Done",
+    storage: "Storage", connection: "Connection",
+    localMode: "This browser only", serverMode: "Sync server",
+    localModeHint: "Displays opened in another window of this browser update instantly. To drive screens on other devices, run the included sync server.",
+    serverModeHint: "Connected to the sync server. Any device on the network can open a display link.",
+    interfaceLang: "Interface language",
+    workflow: "Pick screen → upload → put on screen → widgets → publish",
+    screenStatus: "Screen status", noSignal: "No display connected",
+    connectedSince: "Connected", widgetsCount: "{n} widgets", untitled: "Untitled",
+    inspectorEmpty: "Nothing selected",
+    inspectorEmptyHint: "Pick a widget in the preview, or an item from the list.",
+    physical: "Physical size", resolution: "Design space",
+    deleteScreenWarn: "The display link stops working and its content is removed.",
+    replaceHint: "Keeps the name and every playlist slot, swaps the file.",
+    exportBackup: "Download backup", importBackup: "Restore backup",
+    backupDone: "Backup downloaded", restoreDone: "Backup restored",
+    restoreWarn: "This replaces all screens, playlists and widgets.",
+    resetAll: "Reset everything", resetWarn: "Deletes all media, playlists and widgets.",
+    of: "of", mediaInUse: "in {n} playlists", unused: "unused",
+    dragToReorder: "Drag to reorder", noSchedule: "Always on",
+    pickScreenFirst: "Select a screen first",
+    added: "Added to {name}", removed: "Removed", saved: "Saved",
+    fileTooBig: "That file is larger than {n} MB. Compress it and try again.",
+    badType: "{name} is not a supported image or video.",
+    widgetLabelsShow: "Show labels"
+  },
+  ar: {
+    appName: "لوحة الشاشات", appSub: "مركز الابتكار",
+    screens: "الشاشات", media: "مكتبة الوسائط", playlist: "قائمة التشغيل", widgets: "العناصر",
+    schedule: "الجدولة", settings: "الإعدادات",
+    online: "على الهواء", offline: "غير متصلة", connecting: "بانتظار الشاشة",
+    preview: "معاينة", saveDraft: "حفظ المسودة", publish: "نشر", published: "تم النشر",
+    draftSaved: "تم حفظ المسودة", publishedTo: "تم النشر على {name}",
+    unpublished: "هناك تغييرات لم تُنشر", allPublished: "كل شيء منشور",
+    openDisplay: "فتح شاشة العرض", copyUrl: "نسخ الرابط", copied: "تم نسخ الرابط",
+    displayUrl: "رابط العرض", lastPublished: "آخر نشر", never: "لا يوجد",
+    addScreen: "إضافة شاشة", removeScreen: "حذف الشاشة", screenName: "اسم الشاشة",
+    width_m: "العرض (م)", height_m: "الارتفاع (م)", profile: "الاتجاه",
+    landscape: "أفقي", portrait: "عمودي", ratio: "النسبة",
+    mainScreen: "الشاشة الرئيسية", vertical: "شاشة عمودية",
+    upload: "رفع الوسائط", uploadHint: "أفلت الصور أو مقاطع MP4 هنا، أو تصفّح الملفات.",
+    uploadTypes: "PNG و JPG و WebP و GIF و MP4. ملفات PNG الشفافة تحافظ على شفافيتها.",
+    browse: "تصفّح الملفات", rename: "إعادة تسمية", replace: "استبدال الملف", remove: "حذف",
+    addToScreen: "عرض على الشاشة", addToPlaylist: "إضافة إلى القائمة", duplicate: "نسخ",
+    mediaEmpty: "لا توجد وسائط", mediaEmptyHint: "ارفع التصميم أو الفيديو الجاهز لعرضه على الشاشة.",
+    image: "صورة", video: "فيديو", seconds: "ثانية", duration: "المدة",
+    fit: "احتواء", fill: "ملء", stretch: "تمديد", original: "الحجم الأصلي",
+    fitMode: "طريقة العرض على الشاشة",
+    fitHelp: "الاحتواء يُظهر التصميم كاملاً مع هوامش. الملء يغطي الشاشة وقد يقص الأطراف.",
+    playlists: "قوائم التشغيل", newPlaylist: "قائمة جديدة", playlistName: "اسم القائمة",
+    activePlaylist: "قيد التشغيل", items: "عنصر", empty: "فارغة",
+    play: "تشغيل", pause: "إيقاف مؤقت", next: "التالي", prev: "السابق", loop: "تكرار", shuffle: "عشوائي",
+    transition: "الانتقال", cut: "قطع", fade: "تلاشٍ", crossfade: "تلاشٍ متقاطع",
+    transitionLen: "مدة الانتقال",
+    fullVideo: "الفيديو كاملاً",
+    playlistEmpty: "لا يوجد محتوى على هذه الشاشة",
+    playlistEmptyHint: "أضف وسائط من المكتبة لبدء التشغيل.",
+    addWidget: "إضافة عنصر", countdown: "العد التنازلي", clock: "الساعة", date: "التاريخ",
+    text: "نص", qr: "رمز QR", logo: "الشعار",
+    targetDate: "تاريخ الحدث", targetTime: "وقت الحدث", labels: "التسميات",
+    days: "يوم", hours: "ساعة", minutes: "دقيقة", secondsL: "ثانية",
+    hourFormat: "نظام الوقت", h12: "12 ساعة", h24: "24 ساعة", showSeconds: "إظهار الثواني",
+    calendar: "التقويم", gregorian: "ميلادي", hijri: "هجري", both: "الاثنان",
+    language: "اللغة", english: "English", arabic: "العربية",
+    dateStyle: "نمط التاريخ", long: "مطوّل", short: "مختصر",
+    content: "النص", font: "الخط", size: "الحجم", weight: "السماكة", align: "المحاذاة",
+    color: "اللون", background: "الخلفية", opacity: "العتامة", transparency: "الشفافية",
+    radius: "استدارة الحواف", spacing: "التباعد", letterSpacing: "تباعد الحروف",
+    url: "الرابط", qrUrlHint: "تعرض الشاشة رمزاً قابلاً للمسح لهذا الرابط.",
+    logoSource: "صورة الشعار", pickImage: "اختيار صورة", noLogo: "لم تُختر صورة",
+    position: "الموضع", sizeLabel: "المقاس", alignTo: "محاذاة إلى",
+    lock: "تثبيت", unlock: "فك التثبيت", hide: "إخفاء", show: "إظهار", del: "حذف",
+    widgetsEmpty: "لا توجد عناصر على هذه الشاشة",
+    widgetsEmptyHint: "العناصر تُعرض فوق الوسائط: عد تنازلي أو ساعة أو رمز QR أو شعار.",
+    guides: "الأدلة", safeArea: "المنطقة الآمنة", centerLines: "خطوط المنتصف", grid: "الشبكة",
+    showGuides: "إظهار الأدلة",
+    starts: "يبدأ", ends: "ينتهي", repeat: "التكرار", once: "مرة واحدة", daily: "كل يوم",
+    weekdays: "الأحد–الخميس", weekends: "الجمعة–السبت", customDays: "أيام محددة",
+    newSchedule: "فترة جديدة", scheduleName: "اسم الفترة", playsNow: "تعمل الآن",
+    scheduleEmpty: "لا توجد فترات مجدولة",
+    scheduleEmptyHint: "بدون فترات تعمل الشاشة على القائمة المختارة دائماً.",
+    scheduleHelp: "تُفحص الفترات بالترتيب، وتعمل أول فترة مطابقة، وإلا فالقائمة المختارة.",
+    enabled: "مفعّلة", timezone: "المنطقة الزمنية",
+    liveControl: "التحكم المباشر", reloadScreen: "إعادة تحميل الشاشة", blackout: "إطفاء الشاشة",
+    blackoutOn: "الشاشة مطفأة", showContent: "عرض المحتوى",
+    liveEdit: "نشر فوري أثناء التحرير", liveEditHint: "كل تغيير يظهر على الشاشة مباشرة. استخدمه أثناء الفعالية.",
+    nowPlaying: "المعروض الآن", nothingPlaying: "لا يوجد محتوى",
+    confirmDelete: "حذف {name}؟", confirmDeleteMedia: "سيُزال من كل قوائم التشغيل التي تستخدمه.",
+    cancel: "إلغاء", save: "حفظ", close: "إغلاق", apply: "تطبيق", add: "إضافة", done: "تم",
+    storage: "التخزين", connection: "الاتصال",
+    localMode: "هذا المتصفح فقط", serverMode: "خادم المزامنة",
+    localModeHint: "شاشات العرض المفتوحة في نافذة أخرى من هذا المتصفح تتحدث فوراً. لتشغيل شاشات على أجهزة أخرى، شغّل خادم المزامنة المرفق.",
+    serverModeHint: "متصل بخادم المزامنة. أي جهاز على الشبكة يمكنه فتح رابط العرض.",
+    interfaceLang: "لغة الواجهة",
+    workflow: "اختر الشاشة ← ارفع المحتوى ← اعرضه ← أضف العناصر ← انشر",
+    screenStatus: "حالة الشاشة", noSignal: "لا توجد شاشة متصلة",
+    connectedSince: "متصلة منذ", widgetsCount: "{n} عنصر", untitled: "بدون اسم",
+    inspectorEmpty: "لم يتم تحديد شيء",
+    inspectorEmptyHint: "اختر عنصراً من المعاينة أو من القائمة.",
+    physical: "المقاس الفعلي", resolution: "مساحة التصميم",
+    deleteScreenWarn: "سيتوقف رابط العرض وسيُحذف محتوى الشاشة.",
+    replaceHint: "يحتفظ بالاسم وبمواضعه في القوائم، ويستبدل الملف فقط.",
+    exportBackup: "تنزيل نسخة احتياطية", importBackup: "استعادة نسخة",
+    backupDone: "تم تنزيل النسخة", restoreDone: "تمت الاستعادة",
+    restoreWarn: "سيستبدل هذا كل الشاشات والقوائم والعناصر.",
+    resetAll: "إعادة ضبط الكل", resetWarn: "سيحذف كل الوسائط والقوائم والعناصر.",
+    of: "من", mediaInUse: "في {n} قوائم", unused: "غير مستخدم",
+    dragToReorder: "اسحب لإعادة الترتيب", noSchedule: "دائماً",
+    pickScreenFirst: "اختر شاشة أولاً",
+    added: "أُضيف إلى {name}", removed: "تم الحذف", saved: "تم الحفظ",
+    fileTooBig: "حجم الملف أكبر من {n} ميجابايت. اضغطه ثم أعد المحاولة.",
+    badType: "{name} ليس صورة أو فيديو مدعوماً.",
+    widgetLabelsShow: "إظهار التسميات"
+  }
+};
+
+let LANG = "en";
+const setLang = (l) => { LANG = STRINGS[l] ? l : "en"; };
+const getLang = () => LANG;
+const isRTL = () => LANG === "ar";
+function t(key, vars) {
+  let s = (STRINGS[LANG] && STRINGS[LANG][key]) ?? STRINGS.en[key] ?? key;
+  if (vars) for (const k in vars) s = s.replace(`{${k}}`, vars[k]);
+  return s;
+}
+
+
+/* ============================================================
+   Core — helpers, state model, media storage, transport.
+   ============================================================ */
+
+/* ---------- tiny DOM helpers ---------- */
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  if (props) for (const [k, v] of Object.entries(props)) {
+    if (v === null || v === undefined || v === false) continue;
+    if (k === "class") e.className = v;
+    else if (k === "html") e.innerHTML = v;
+    else if (k === "style" && typeof v === "object") Object.assign(e.style, v);
+    else if (k === "dataset") Object.assign(e.dataset, v);
+    else if (k.startsWith("on") && typeof v === "function") e.addEventListener(k.slice(2), v);
+    else if (k === "value") e.value = v;
+    else if (k === "checked" || k === "disabled" || k === "selected") e[k] = !!v;
+    else e.setAttribute(k, v);
+  }
+  for (const kid of kids.flat(3)) {
+    if (kid === null || kid === undefined || kid === false) continue;
+    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
+  }
+  return e;
+}
+const clear = (node) => { while (node.firstChild) node.removeChild(node.firstChild); return node; };
+const uid = (p = "id") => p + "_" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-3);
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const round = (v, d = 2) => Math.round(v * 10 ** d) / 10 ** d;
+const deep = (o) => JSON.parse(JSON.stringify(o));
+const eq = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+
+function fmtBytes(n) {
+  if (!n && n !== 0) return "";
+  if (n < 1024) return n + " B";
+  if (n < 1048576) return (n / 1024).toFixed(0) + " KB";
+  return (n / 1048576).toFixed(1) + " MB";
+}
+function fmtClock(sec) {
+  sec = Math.max(0, Math.round(sec));
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return m + ":" + String(s).padStart(2, "0");
+}
+const ARABIC_DIGITS = ["٠", "١", "٢", "٣", "٤", "٥", "٦", "٧", "٨", "٩"];
+const toArabicDigits = (s) => String(s).replace(/[0-9]/g, (d) => ARABIC_DIGITS[+d]);
+
+/* ---------- time zone helpers (no DST in Riyadh, but handled generally) ---------- */
+const TZ_PARTS_CACHE = new Map();
+function tzFormatter(tz) {
+  if (!TZ_PARTS_CACHE.has(tz)) {
+    TZ_PARTS_CACHE.set(tz, new Intl.DateTimeFormat("en-US", {
+      timeZone: tz, hour12: false,
+      year: "numeric", month: "2-digit", day: "2-digit",
+      hour: "2-digit", minute: "2-digit", second: "2-digit", weekday: "short"
+    }));
+  }
+  return TZ_PARTS_CACHE.get(tz);
+}
+const DOW = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+/** Wall-clock parts for `date` inside `tz`. */
+function tzParts(tz, date = new Date()) {
+  const p = {};
+  for (const part of tzFormatter(tz).formatToParts(date)) p[part.type] = part.value;
+  const hour = p.hour === "24" ? 0 : +p.hour;
+  return {
+    y: +p.year, mo: +p.month, d: +p.day,
+    h: hour, mi: +p.minute, s: +p.second,
+    dow: DOW[p.weekday] ?? 0,
+    minutes: hour * 60 + +p.minute,
+    dateStr: `${p.year}-${p.month}-${p.day}`
+  };
+}
+/** Epoch ms for a wall-clock time expressed in `tz`. */
+function zonedToEpoch(tz, y, mo, d, h = 0, mi = 0, s = 0) {
+  const guess = Date.UTC(y, mo - 1, d, h, mi, s);
+  const p = tzParts(tz, new Date(guess));
+  const seen = Date.UTC(p.y, p.mo - 1, p.d, p.h, p.mi, p.s);
+  return guess - (seen - guess);
+}
+
+/* ---------- icons ---------- */
+const I = {
+  screens: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>',
+  media: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.6"/><path d="m21 15-5-5L5 21"/></svg>',
+  playlist: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6h12M3 12h8M3 18h8"/><path d="M15 12.5v6.2"/><circle cx="17.6" cy="18.7" r="2.3"/><path d="M15 12.5 21 11v5"/></svg>',
+  widgets: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="8" height="8" rx="1.5"/><rect x="13" y="3" width="8" height="5" rx="1.5"/><rect x="13" y="10" width="8" height="11" rx="1.5"/><rect x="3" y="13" width="8" height="8" rx="1.5"/></svg>',
+  schedule: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="M12 13v3l2 1"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 14.5a1.6 1.6 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.6 1.6 0 0 0-2.7 1.1v.3a2 2 0 1 1-4 0v-.2a1.6 1.6 0 0 0-2.8-1.1l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.6 1.6 0 0 0-1.1-2.7H3a2 2 0 1 1 0-4h.2a1.6 1.6 0 0 0 1.1-2.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.6 1.6 0 0 0 2.7-1.1V3a2 2 0 1 1 4 0v.2a1.6 1.6 0 0 0 2.8 1.1l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.6 1.6 0 0 0 1.1 2.7h.3a2 2 0 1 1 0 4h-.2a1.6 1.6 0 0 0-1.4 1z"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13l11-6.5z"/></svg>',
+  pause: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="5" width="4" height="14" rx="1"/><rect x="13" y="5" width="4" height="14" rx="1"/></svg>',
+  next: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5.5v13l9-6.5z"/><rect x="16" y="5" width="2.6" height="14" rx="1"/></svg>',
+  prev: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M18 5.5v13L9 12z"/><rect x="5.4" y="5" width="2.6" height="14" rx="1"/></svg>',
+  loop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 2.5 20.5 6 17 9.5"/><path d="M20.5 6H7a3.5 3.5 0 0 0-3.5 3.5V11"/><path d="M7 21.5 3.5 18 7 14.5"/><path d="M3.5 18H17a3.5 3.5 0 0 0 3.5-3.5V13"/></svg>',
+  shuffle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M17 3.5 20.5 7 17 10.5M17 13.5 20.5 17 17 20.5"/><path d="M3.5 7h3.2c1.2 0 2.3.6 3 1.6l5.1 7.8c.7 1 1.8 1.6 3 1.6h2.7M3.5 17h3.2c1.2 0 2.3-.6 3-1.6l.9-1.4M20.5 7h-2.7c-1.2 0-2.3.6-3 1.6l-.9 1.4"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 5v14M5 12h14"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6.5h16M9.5 6.5V4.8A1.3 1.3 0 0 1 10.8 3.5h2.4a1.3 1.3 0 0 1 1.3 1.3v1.7"/><path d="M6.5 6.5 7.4 20a1.3 1.3 0 0 0 1.3 1.2h6.6a1.3 1.3 0 0 0 1.3-1.2l.9-13.5"/></svg>',
+  copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M6 15H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v1"/></svg>',
+  ext: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 4h6v6M20 4l-8.5 8.5"/><path d="M19 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h5"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  eyeOff: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 4l16 16"/><path d="M9.9 5.9A9.6 9.6 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-3.3 4M6.4 7.6A16.6 16.6 0 0 0 2.5 12S6 18.5 12 18.5c1.2 0 2.3-.3 3.3-.7"/><path d="M9.9 10.1a3 3 0 0 0 4.2 4.2"/></svg>',
+  lock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg>',
+  unlock: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7.8a4 4 0 0 1 7.6-1.7"/></svg>',
+  grip: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1"/><path d="M20.8 4.2v5h-5"/></svg>',
+  power: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 3v9"/><path d="M7.3 6.2a8 8 0 1 0 9.4 0"/></svg>',
+  upload: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4.5M7.5 9 12 4.5 16.5 9"/><path d="M3.5 15v3.5a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V15"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
+  close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  globe: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3.2 9h17.6M3.2 15h17.6"/><path d="M12 3a14 14 0 0 1 0 18 14 14 0 0 1 0-18Z"/></svg>'
+};
+const icon = (name, cls = "") => h("span", { class: cls, html: I[name], style: { display: "inline-flex", width: "16px", height: "16px" } });
+
+/* ---------- defaults ---------- */
+const FONTS = [
+  { id: "sans", label: "Sans", css: '-apple-system, "Segoe UI", "Noto Sans Arabic", Tahoma, sans-serif' },
+  { id: "grotesk", label: "Grotesk", css: '"Helvetica Neue", Helvetica, Arial, "Noto Kufi Arabic", sans-serif' },
+  { id: "serif", label: "Serif", css: 'Georgia, "Times New Roman", "Noto Naskh Arabic", serif' },
+  { id: "mono", label: "Mono", css: '"SF Mono", "Cascadia Mono", Consolas, monospace' },
+  { id: "condensed", label: "Condensed", css: '"Arial Narrow", "Roboto Condensed", sans-serif' }
+];
+const fontCss = (id) => (FONTS.find((f) => f.id === id) || FONTS[0]).css;
+
+const MAX_UPLOAD_MB = 220;
+const IMAGE_TYPES = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif", "image/svg+xml"];
+const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
+
+function designSize(wM, hM) {
+  const scale = 1920 / Math.max(wM, hM);
+  return { dw: Math.round(wM * scale), dh: Math.round(hM * scale) };
+}
+
+function newConfig() {
+  const pid = uid("pl");
+  return {
+    playlists: [{ id: pid, name: "Main rotation", items: [] }],
+    activePlaylistId: pid,
+    transition: "crossfade",
+    transitionMs: 700,
+    loop: true,
+    shuffle: false,
+    widgets: [],
+    schedules: [],
+    blackout: false
+  };
+}
+
+function newScreen(id, nameEn, nameAr, wM, hM, profile) {
+  const { dw, dh } = designSize(wM, hM);
+  return {
+    id, name: { en: nameEn, ar: nameAr }, profile, wM, hM, dw, dh,
+    draft: newConfig(), live: null, liveRev: 0, publishedAt: null
+  };
+}
+
+function defaultState() {
+  return {
+    v: 1,
+    rev: 0,
+    lang: "en",
+    settings: {
+      tz: "Asia/Riyadh",
+      guides: { on: true, safe: true, center: true, grid: false },
+      liveEdit: false
+    },
+    media: [],
+    screens: [
+      newScreen("main", "Main LED wall", "الشاشة الرئيسية", 10, 5, "landscape"),
+      newScreen("vertical-1", "Future X · 1", "فيوتشر إكس · ١", 0.6, 2.7, "portrait"),
+      newScreen("vertical-2", "Future X · 2", "فيوتشر إكس · ٢", 0.6, 2.7, "portrait")
+    ]
+  };
+}
+
+/* ---------- IndexedDB blob store (browser-only mode) ---------- */
+const IDB = (() => {
+  const DB = "ic-signage", STORE = "files";
+  let dbp = null;
+  function open() {
+    if (dbp) return dbp;
+    dbp = new Promise((res, rej) => {
+      if (typeof indexedDB === "undefined" || !indexedDB) { rej(new Error("no-indexeddb")); return; }
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(STORE)) r.result.createObjectStore(STORE); };
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    return dbp;
+  }
+  async function tx(mode, fn) {
+    const db = await open();
+    return new Promise((res, rej) => {
+      const t = db.transaction(STORE, mode);
+      const req = fn(t.objectStore(STORE));
+      t.oncomplete = () => res(req && req.result);
+      t.onerror = () => rej(t.error);
+    });
+  }
+  return {
+    put: (k, v) => tx("readwrite", (s) => s.put(v, k)),
+    get: (k) => tx("readonly", (s) => s.get(k)),
+    del: (k) => tx("readwrite", (s) => s.delete(k)),
+    clear: () => tx("readwrite", (s) => s.clear())
+  };
+})();
+
+/* ---------- transport: browser-local or sync server ---------- */
+const Net = (() => {
+  const LS_KEY = "ic-signage-state";
+  const CH_NAME = "ic-signage";
+  let mode = "local";
+  let chan = null, es = null;
+  const listeners = { state: [], cmd: [], beat: [], link: [] };
+  const emit = (k, v) => listeners[k].forEach((f) => f(v));
+  const clientId = uid("cl");
+  const objectUrls = new Map();
+
+  async function probe() {
+    try {
+      const r = await fetch("/api/ping", { cache: "no-store" });
+      if (r.ok) { const j = await r.json(); if (j && j.signage) return true; }
+    } catch (e) { /* offline / file:// — fall back to local */ }
+    return false;
+  }
+
+  async function init() {
+    mode = (await probe()) ? "server" : "local";
+    if (mode === "server") {
+      connectSse();
+    } else if ("BroadcastChannel" in window) {
+      chan = new BroadcastChannel(CH_NAME);
+      chan.onmessage = (ev) => {
+        const m = ev.data || {};
+        if (m.from === clientId) return;
+        if (m.k === "state") emit("state", m.rev);
+        else if (m.k === "cmd") emit("cmd", m.payload);
+        else if (m.k === "beat") emit("beat", m.payload);
+      };
+      window.addEventListener("storage", (e) => { if (e.key === LS_KEY) emit("state", null); });
+    }
+    return mode;
+  }
+
+  let sseRetry = 0;
+  function connectSse() {
+    try { if (es) es.close(); } catch (e) { /* noop */ }
+    es = new EventSource("/api/events");
+    es.onopen = () => { sseRetry = 0; emit("link", true); };
+    es.onmessage = (ev) => {
+      let m; try { m = JSON.parse(ev.data); } catch (e) { return; }
+      if (m.from === clientId) return;
+      if (m.k === "state") emit("state", m.rev);
+      else if (m.k === "cmd") emit("cmd", m.payload);
+      else if (m.k === "beat") emit("beat", m.payload);
+    };
+    es.onerror = () => {
+      emit("link", false);
+      try { es.close(); } catch (e) { /* noop */ }
+      sseRetry = Math.min(sseRetry + 1, 6);
+      setTimeout(connectSse, 800 * sseRetry);
+    };
+  }
+
+  async function loadState() {
+    if (mode === "server") {
+      const r = await fetch("/api/state", { cache: "no-store" });
+      if (!r.ok) throw new Error("state unavailable");
+      const j = await r.json();
+      return j && j.screens ? j : defaultState();
+    }
+    try {
+      const raw = localStorage.getItem(LS_KEY);
+      if (raw) { const j = JSON.parse(raw); if (j && j.screens) return j; }
+    } catch (e) { /* corrupt or blocked storage */ }
+    return null;
+  }
+
+  async function saveState(state) {
+    if (mode === "server") {
+      await fetch("/api/state", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-client": clientId },
+        body: JSON.stringify(state)
+      });
+      return;
+    }
+    try { localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+    catch (e) { throw new Error("storage-full"); }
+    if (chan) chan.postMessage({ k: "state", rev: state.rev, from: clientId });
+  }
+
+  function post(k, payload) {
+    if (mode === "server") {
+      fetch("/api/bus", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ k, payload, from: clientId })
+      }).catch(() => { /* screen keeps last content */ });
+    } else if (chan) {
+      chan.postMessage({ k, payload, from: clientId });
+    }
+  }
+  const sendCmd = (payload) => post("cmd", payload);
+  const beat = (payload) => post("beat", payload);
+
+  async function putMedia(file, rec) {
+    if (mode === "server") {
+      const r = await fetch("/api/media?name=" + encodeURIComponent(file.name), {
+        method: "POST",
+        headers: { "content-type": file.type || "application/octet-stream" },
+        body: file
+      });
+      if (!r.ok) throw new Error("upload failed");
+      const j = await r.json();
+      return { ...rec, url: j.url };
+    }
+    await IDB.put(rec.id, file);
+    return rec;
+  }
+
+  async function delMedia(rec) {
+    if (mode === "server") {
+      if (rec.url) await fetch("/api/media?url=" + encodeURIComponent(rec.url), { method: "DELETE" }).catch(() => {});
+    } else {
+      await IDB.del(rec.id).catch(() => {});
+      const u = objectUrls.get(rec.id);
+      if (u) { URL.revokeObjectURL(u); objectUrls.delete(rec.id); }
+    }
+  }
+
+  async function mediaUrl(rec) {
+    if (!rec) return null;
+    if (rec.url) return rec.url;
+    if (objectUrls.has(rec.id)) return objectUrls.get(rec.id);
+    let blob = null;
+    try { blob = await IDB.get(rec.id); } catch (e) { return null; }
+    if (!blob) return null;
+    const u = URL.createObjectURL(blob);
+    objectUrls.set(rec.id, u);
+    return u;
+  }
+
+  return {
+    init, loadState, saveState, sendCmd, beat, putMedia, delMedia, mediaUrl,
+    on: (k, f) => listeners[k].push(f),
+    get mode() { return mode; },
+    clientId
+  };
+})();
+
+/* ---------- store ---------- */
+const Store = (() => {
+  let state = defaultState();
+  const subs = [];
+  let saveTimer = null, pending = false;
+
+  function notify(reason) { subs.forEach((f) => f(state, reason)); }
+
+  function flush() {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+    if (!pending) return Promise.resolve();
+    pending = false;
+    return Net.saveState(state).catch((e) => {
+      Toast.show(e && e.message === "storage-full"
+        ? "Storage is full — remove some media."
+        : "Could not save. Check the sync server.", true);
+    });
+  }
+
+  /** Mutate state; persists (debounced) and re-renders. */
+  function update(fn, opts = {}) {
+    const r = fn(state);
+    if (r === false) return;
+    state.rev = (state.rev || 0) + 1;
+    pending = true;
+    if (!opts.defer) { clearTimeout(saveTimer); saveTimer = setTimeout(flush, 220); }
+    if (!opts.silent) notify(opts.reason || "update");
+  }
+
+  async function reload(reason = "remote") {
+    const s = await Net.loadState();
+    if (s) { state = s; notify(reason); }
+  }
+
+  return {
+    get state() { return state; },
+    set(s) { state = s; },
+    update, flush, reload,
+    subscribe: (f) => { subs.push(f); return () => subs.splice(subs.indexOf(f), 1); },
+    notify,
+    screen: (id) => state.screens.find((s) => s.id === id),
+    media: (id) => state.media.find((m) => m.id === id)
+  };
+})();
+
+/* ---------- toasts ---------- */
+const Toast = (() => {
+  let host = null;
+  function show(msg, isErr = false) {
+    if (!host) { host = h("div", { id: "toasts" }); document.body.append(host); }
+    const el = h("div", { class: "toast" + (isErr ? " err" : "") }, msg);
+    host.append(el);
+    setTimeout(() => { el.style.opacity = "0"; el.style.transition = "opacity .3s"; }, isErr ? 4200 : 2200);
+    setTimeout(() => el.remove(), isErr ? 4600 : 2600);
+  }
+  return { show };
+})();
+
+/* ---------- schedule resolution ---------- */
+function scheduleMatches(block, tz, now = new Date()) {
+  if (!block || block.enabled === false) return false;
+  const p = tzParts(tz, now);
+  if (block.startDate && p.dateStr < block.startDate) return false;
+  if (block.endDate && p.dateStr > block.endDate) return false;
+  const rep = block.repeat || "daily";
+  if (rep === "weekdays" && !(p.dow >= 0 && p.dow <= 4)) return false;      // Sun–Thu
+  if (rep === "weekends" && !(p.dow === 5 || p.dow === 6)) return false;    // Fri–Sat
+  if (rep === "custom" && !(block.days || []).includes(p.dow)) return false;
+  if (rep === "once" && block.startDate && p.dateStr !== block.startDate) return false;
+  const toMin = (s) => { const [a, b] = String(s || "").split(":"); return (+a) * 60 + (+b || 0); };
+  const from = block.startTime ? toMin(block.startTime) : 0;
+  const to = block.endTime ? toMin(block.endTime) : 24 * 60;
+  if (to <= from) return p.minutes >= from || p.minutes < to;   // wraps past midnight
+  return p.minutes >= from && p.minutes < to;
+}
+
+/** Which playlist should be on air right now. */
+function resolvePlaylist(cfg, tz, now = new Date()) {
+  if (!cfg) return null;
+  for (const b of cfg.schedules || []) {
+    if (scheduleMatches(b, tz, now)) {
+      const pl = (cfg.playlists || []).find((p) => p.id === b.playlistId);
+      if (pl) return { playlist: pl, block: b };
+    }
+  }
+  const pl = (cfg.playlists || []).find((p) => p.id === cfg.activePlaylistId) || (cfg.playlists || [])[0] || null;
+  return pl ? { playlist: pl, block: null } : null;
+}
+
+/* ---------- thumbnails ---------- */
+function readImageMeta(file) {
+  return new Promise((res) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement("canvas");
+      const scale = Math.min(1, 300 / Math.max(img.width, img.height));
+      c.width = Math.max(1, Math.round(img.width * scale));
+      c.height = Math.max(1, Math.round(img.height * scale));
+      const ctx = c.getContext("2d");
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      const isPng = file.type === "image/png" || file.type === "image/webp";
+      let thumb = "";
+      try { thumb = c.toDataURL(isPng ? "image/png" : "image/jpeg", isPng ? undefined : 0.7); } catch (e) { /* tainted */ }
+      URL.revokeObjectURL(url);
+      res({ w: img.width, h: img.height, thumb });
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); res({ w: 0, h: 0, thumb: "" }); };
+    img.src = url;
+  });
+}
+
+function readVideoMeta(file) {
+  return new Promise((res) => {
+    const url = URL.createObjectURL(file);
+    const v = document.createElement("video");
+    v.preload = "metadata"; v.muted = true; v.playsInline = true;
+    const done = (out) => { URL.revokeObjectURL(url); res(out); };
+    v.onloadeddata = () => {
+      const grab = () => {
+        const c = document.createElement("canvas");
+        const scale = Math.min(1, 300 / Math.max(v.videoWidth || 1, v.videoHeight || 1));
+        c.width = Math.max(1, Math.round((v.videoWidth || 320) * scale));
+        c.height = Math.max(1, Math.round((v.videoHeight || 180) * scale));
+        let thumb = "";
+        try {
+          c.getContext("2d").drawImage(v, 0, 0, c.width, c.height);
+          thumb = c.toDataURL("image/jpeg", 0.7);
+        } catch (e) { /* ignore */ }
+        done({ w: v.videoWidth, h: v.videoHeight, dur: v.duration || 0, thumb });
+      };
+      if (v.readyState >= 2) { v.currentTime = Math.min(1, (v.duration || 2) / 3); v.onseeked = grab; setTimeout(grab, 1200); }
+      else grab();
+    };
+    v.onerror = () => done({ w: 0, h: 0, dur: 0, thumb: "" });
+    v.src = url;
+  });
+}
+
+async function ingestFile(file) {
+  const mime = file.type || "";
+  const isImg = IMAGE_TYPES.includes(mime) || /\.(png|jpe?g|webp|gif|svg)$/i.test(file.name);
+  const isVid = VIDEO_TYPES.includes(mime) || /\.(mp4|webm|mov)$/i.test(file.name);
+  if (!isImg && !isVid) throw new Error(t("badType", { name: file.name }));
+  if (file.size > MAX_UPLOAD_MB * 1048576) throw new Error(t("fileTooBig", { n: MAX_UPLOAD_MB }));
+  const meta = isVid ? await readVideoMeta(file) : await readImageMeta(file);
+  const rec = {
+    id: uid("md"),
+    name: file.name.replace(/\.[^.]+$/, ""),
+    kind: isVid ? "video" : "image",
+    mime: mime || (isVid ? "video/mp4" : "image/png"),
+    size: file.size,
+    w: meta.w, h: meta.h,
+    dur: meta.dur || 0,
+    thumb: meta.thumb || "",
+    addedAt: Date.now()
+  };
+  return await Net.putMedia(file, rec);
+}
+
+
+/* ============================================================
+   Stage — the single renderer used by both the admin preview and
+   the display page. Content is authored in a fixed "design space"
+   (the screen's real proportions) and scaled to whatever box it
+   lands in, so a widget sits in the same spot on both.
+   ============================================================ */
+
+const FIT_CSS = { fit: "contain", fill: "cover", stretch: "fill", original: "none" };
+
+class Stage {
+  constructor(host, opts = {}) {
+    this.host = host;
+    this.opts = Object.assign({ interactive: false, chrome: false, guides: null }, opts);
+    this.screen = null;
+    this.cfg = null;
+    this.items = [];
+    this.order = [];
+    this.index = 0;
+    this.playing = true;
+    this.scale = 1;
+    this.selected = null;
+    this.urlCache = new Map();
+    this.timer = null;
+    this.itemStart = 0;
+    this.itemLength = 0;
+    this.paused_remaining = null;
+    this.widgetEls = new Map();
+    this.updaters = [];
+    this._build();
+    this._ro = new ResizeObserver(() => this.layout());
+    this._ro.observe(this.host);
+    this._tick = setInterval(() => this._onTick(), 250);
+  }
+
+  _build() {
+    clear(this.host);
+    this.frame = h("div", { class: "screen-frame" });
+    this.screenEl = h("div", { class: "screen" });
+    this.design = h("div", { class: "design", dir: "ltr" });
+    this.layerA = h("div", { class: "layer" });
+    this.layerB = h("div", { class: "layer" });
+    this.wgLayer = h("div", { class: "layer", style: { pointerEvents: this.opts.interactive ? "auto" : "none" } });
+    this.guideLayer = h("div", { class: "guides" });
+    this.emptyEl = h("div", { class: "empty-screen" });
+    this.design.append(this.layerA, this.layerB, this.emptyEl, this.wgLayer, this.guideLayer);
+    this.screenEl.append(this.design);
+    this.frame.append(this.screenEl);
+    if (this.opts.chrome) {
+      this.tickTop = h("div", { class: "tick top" });
+      this.tickSide = h("div", { class: "tick side" });
+      this.frame.append(this.tickTop, this.tickSide, h("div", { class: "screen-reflection" }));
+    }
+    this.host.append(this.frame);
+    this.front = this.layerA;
+    this.back = this.layerB;
+    if (this.opts.interactive) this._bindEditing();
+  }
+
+  /* ---------- geometry ---------- */
+  setScreen(screen) {
+    const changed = !this.screen || this.screen.id !== screen.id || this.screen.dw !== screen.dw || this.screen.dh !== screen.dh;
+    this.screen = screen;
+    this.design.style.width = screen.dw + "px";
+    this.design.style.height = screen.dh + "px";
+    if (this.opts.chrome) {
+      const dec = (v) => (v < 1 ? v.toFixed(2) : v.toFixed(1));
+      this.tickTop.textContent = dec(screen.wM) + " m";
+      this.tickSide.textContent = dec(screen.hM) + " m";
+    }
+    this.layout();
+    return changed;
+  }
+
+  layout() {
+    if (!this.screen) return;
+    const pad = this.opts.chrome ? 30 : 0;
+    const bw = Math.max(40, this.host.clientWidth - pad * 2);
+    const bh = Math.max(40, this.host.clientHeight - pad * 2);
+    const s = Math.min(bw / this.screen.dw, bh / this.screen.dh);
+    this.scale = s;
+    const w = Math.round(this.screen.dw * s), hh = Math.round(this.screen.dh * s);
+    this.screenEl.style.width = w + "px";
+    this.screenEl.style.height = hh + "px";
+    this.design.style.transform = `scale(${s})`;
+  }
+
+  /* ---------- guides ---------- */
+  setGuides(g) {
+    clear(this.guideLayer);
+    if (!g || !g.on) return;
+    if (g.grid) this.guideLayer.append(h("div", {
+      class: "grid",
+      style: { backgroundSize: `${this.screen.dw / 12}px ${this.screen.dw / 12}px` }
+    }));
+    if (g.safe) this.guideLayer.append(h("div", { class: "safe" }));
+    if (g.center) this.guideLayer.append(h("div", { class: "cx" }), h("div", { class: "cy" }));
+  }
+
+  /* ---------- applying a configuration ---------- */
+  async apply(cfg, playlist) {
+    const prevItems = JSON.stringify(this.items.map((i) => [i.mediaId, i.seconds, i.fit]));
+    this.cfg = cfg;
+    const media = Store.state.media;
+    this.items = (playlist ? playlist.items : []).filter((i) => media.some((m) => m.id === i.mediaId));
+    const nowItems = JSON.stringify(this.items.map((i) => [i.mediaId, i.seconds, i.fit]));
+
+    this.screenEl.style.background = cfg && cfg.blackout ? "#000" : "#000";
+    this.design.style.visibility = cfg && cfg.blackout ? "hidden" : "visible";
+
+    this._renderWidgets(cfg ? cfg.widgets || [] : []);
+
+    if (nowItems !== prevItems || this.order.length !== this.items.length) {
+      this._buildOrder();
+      const keep = this.current ? this.items.findIndex((i) => i.id === this.current.id) : -1;
+      if (keep >= 0) {
+        // the current clip survived the edit — keep it on screen, just re-time it
+        this.index = Math.max(0, this.order.indexOf(keep));
+        this.current = this.items[keep];
+        this._arm();
+      } else {
+        this.index = 0;
+        await this._show(0, true);
+      }
+    }
+    this._updateEmpty();
+  }
+
+  _updateEmpty() {
+    const none = this.items.length === 0;
+    clear(this.emptyEl);
+    this.emptyEl.style.display = none ? "grid" : "none";
+    if (none && this.opts.chrome) {
+      this.emptyEl.style.fontSize = Math.round(this.screen.dh * 0.028) + "px";
+      this.emptyEl.append(
+        h("b", null, t("playlistEmpty")),
+        h("div", null, t("playlistEmptyHint"))
+      );
+    }
+  }
+
+  _buildOrder() {
+    this.order = this.items.map((_, i) => i);
+    if (this.cfg && this.cfg.shuffle) {
+      for (let i = this.order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [this.order[i], this.order[j]] = [this.order[j], this.order[i]];
+      }
+    }
+  }
+
+  async _url(mediaId) {
+    if (this.urlCache.has(mediaId)) return this.urlCache.get(mediaId);
+    const rec = Store.media(mediaId);
+    let u = null;
+    try { u = await Net.mediaUrl(rec); } catch (e) { u = null; }
+    if (u) this.urlCache.set(mediaId, u);
+    return u;
+  }
+
+  /* ---------- playback ---------- */
+  async _show(orderPos, immediate = false) {
+    clearTimeout(this.timer);
+    if (!this.items.length) {
+      clear(this.front); clear(this.back);
+      this.current = null;
+      return;
+    }
+    const pos = ((orderPos % this.order.length) + this.order.length) % this.order.length;
+    this.index = pos;
+    const item = this.items[this.order[pos]];
+    this.current = item;
+    const rec = Store.media(item.mediaId);
+    const url = await this._url(item.mediaId);
+    if (!url) { this._armNext(3000); return; }
+
+    const node = rec.kind === "video"
+      ? h("video", { src: url, autoplay: true, muted: true, playsinline: "", "webkit-playsinline": "" })
+      : h("img", { src: url, alt: "" });
+    node.style.objectFit = FIT_CSS[item.fit || "fit"] || "contain";
+    if ((item.fit || "fit") === "original") node.style.objectPosition = "center";
+
+    clear(this.back);
+    this.back.append(node);
+    this.back.style.opacity = "0";
+    this.back.style.zIndex = "2";
+    this.front.style.zIndex = "1";
+
+    const ready = new Promise((res) => {
+      let settled = false;
+      const go = () => { if (!settled) { settled = true; res(); } };
+      node.addEventListener(rec.kind === "video" ? "loadeddata" : "load", go, { once: true });
+      node.addEventListener("error", go, { once: true });
+      setTimeout(go, 2500);
+    });
+    await ready;
+
+    const mode = immediate ? "cut" : (this.cfg && this.cfg.transition) || "crossfade";
+    const ms = Math.max(0, (this.cfg && this.cfg.transitionMs) || 700);
+
+    if (rec.kind === "video") {
+      node.currentTime = 0;
+      const p = node.play();
+      if (p && p.catch) p.catch(() => {});
+      if (!this.playing) node.pause();
+      node.addEventListener("ended", () => { if (this.playing && this.current === item) this.next(); });
+    }
+
+    if (mode === "cut" || ms === 0) {
+      this.back.style.transition = "none";
+      this.back.style.opacity = "1";
+      this.front.style.opacity = "0";
+      this._swap();
+    } else if (mode === "fade") {
+      this.front.style.transition = `opacity ${ms / 2}ms ease`;
+      this.front.style.opacity = "0";
+      await new Promise((r) => setTimeout(r, ms / 2));
+      this.back.style.transition = `opacity ${ms / 2}ms ease`;
+      void this.back.offsetWidth;
+      this.back.style.opacity = "1";
+      this._swap();
+    } else {
+      this.back.style.transition = `opacity ${ms}ms ease`;
+      void this.back.offsetWidth;
+      this.back.style.opacity = "1";
+      setTimeout(() => { this.front.style.opacity = "0"; }, ms);
+      this._swap();
+    }
+
+    this._arm();
+  }
+
+  _swap() {
+    const tmp = this.front;
+    this.front = this.back;
+    this.back = tmp;
+    setTimeout(() => { if (this.back !== this.front) clear(this.back); }, 900);
+  }
+
+  _arm() {
+    clearTimeout(this.timer);
+    const item = this.current;
+    if (!item) return;
+    const rec = Store.media(item.mediaId);
+    this.itemStart = performance.now();
+    if (rec && rec.kind === "video") {
+      this.itemLength = (rec.dur || 0) * 1000;
+      if (!rec.dur) this._armNext(20000);
+      return;
+    }
+    this.itemLength = Math.max(1, item.seconds || 10) * 1000;
+    if (this.playing) this._armNext(this.itemLength);
+  }
+
+  _armNext(ms) {
+    clearTimeout(this.timer);
+    if (!this.playing) return;
+    if (this.items.length === 1 && this.cfg && this.cfg.loop === false) return;
+    this.timer = setTimeout(() => this.next(), ms);
+  }
+
+  _video() {
+    const n = this.front.querySelector("video");
+    return n || null;
+  }
+
+  play() {
+    this.playing = true;
+    const v = this._video();
+    if (v) { const p = v.play(); if (p && p.catch) p.catch(() => {}); }
+    if (this.paused_remaining != null) {
+      const rem = this.paused_remaining;
+      this.paused_remaining = null;
+      this.itemStart = performance.now() - (this.itemLength - rem);
+      this._armNext(rem);
+    } else { this._arm(); }
+  }
+
+  pause() {
+    this.playing = false;
+    clearTimeout(this.timer);
+    const v = this._video();
+    if (v) v.pause();
+    if (this.itemLength) this.paused_remaining = Math.max(0, this.itemLength - (performance.now() - this.itemStart));
+  }
+
+  toggle() { this.playing ? this.pause() : this.play(); }
+
+  next() {
+    this.paused_remaining = null;
+    if (!this.items.length) return;
+    const last = this.index >= this.order.length - 1;
+    if (last && this.cfg && this.cfg.loop === false) { this.pause(); return; }
+    if (last && this.cfg && this.cfg.shuffle) this._buildOrder();
+    this._show(this.index + 1);
+  }
+
+  prev() {
+    this.paused_remaining = null;
+    if (!this.items.length) return;
+    this._show(this.index - 1);
+  }
+
+  goTo(itemIndex) {
+    const pos = this.order.indexOf(itemIndex);
+    this.paused_remaining = null;
+    this._show(pos < 0 ? 0 : pos);
+  }
+
+  _onTick() {
+    for (const f of this.updaters) { try { f(); } catch (e) { /* keep the wall alive */ } }
+    if (!this.opts.onTick) return;
+    const rec = this.current ? Store.media(this.current.mediaId) : null;
+    let elapsed = 0, total = this.itemLength / 1000;
+    const v = this._video();
+    if (v && rec && rec.kind === "video") { elapsed = v.currentTime; total = v.duration || rec.dur || 0; }
+    else if (this.current) {
+      elapsed = this.playing
+        ? (performance.now() - this.itemStart) / 1000
+        : (this.itemLength - (this.paused_remaining ?? this.itemLength)) / 1000;
+    }
+    this.opts.onTick({
+      playing: this.playing,
+      index: this.current ? this.order[this.index] : -1,
+      count: this.items.length,
+      name: rec ? rec.name : null,
+      elapsed: clamp(elapsed, 0, total || 0),
+      total: total || 0
+    });
+  }
+
+  /* ---------- widgets ---------- */
+  _renderWidgets(widgets) {
+    const sig = JSON.stringify(widgets) + "|" + this.selected + "|" + getLang();
+    if (sig === this._wgSig) return;
+    this._wgSig = sig;
+    this.updaters = [];
+    clear(this.wgLayer);
+    this.widgetEls.clear();
+    const list = [...widgets].sort((a, b) => (a.z || 0) - (b.z || 0));
+    for (const w of list) {
+      if (w.hidden && !this.opts.interactive) continue;
+      const el = this._widgetEl(w);
+      this.wgLayer.append(el);
+      this.widgetEls.set(w.id, el);
+    }
+  }
+
+  _widgetEl(w) {
+    const S = w.style || {};
+    const el = h("div", {
+      class: "wg" + (this.opts.interactive ? " editable" : "") + (w.locked ? " locked" : "") +
+        (this.selected === w.id && this.opts.interactive ? " sel" : ""),
+      dataset: { id: w.id },
+      style: {
+        left: w.x + "%", top: w.y + "%", width: w.w + "%", height: w.h + "%",
+        opacity: w.hidden ? (this.opts.interactive ? ".28" : "0") : String(S.opacity ?? 1),
+        borderRadius: (S.radius || 0) + "px",
+        background: hexA(S.bg || "#000000", S.bgOpacity ?? 0),
+        color: S.color || "#ffffff",
+        fontFamily: fontCss(S.font),
+        fontWeight: String(S.weight || 600),
+        fontSize: (S.size || 60) + "px",
+        letterSpacing: (S.letter || 0) + "px",
+        padding: (S.pad || 0) + "px",
+        textAlign: S.align || "center",
+        justifyContent: S.align === "left" ? "flex-start" : S.align === "right" ? "flex-end" : "center",
+        alignItems: "center",
+        pointerEvents: this.opts.interactive && !w.locked ? "auto" : "none"
+      }
+    });
+    const body = h("div", { class: "wg-body" });
+    el.append(body);
+    this._paint(w, body);
+    if (this.opts.interactive && this.selected === w.id && !w.locked) {
+      for (const c of ["nw", "ne", "sw", "se"]) el.append(h("i", { class: "handle " + c, dataset: { corner: c } }));
+    }
+    return el;
+  }
+
+  _paint(w, body) {
+    const S = w.style || {}, P = w.props || {};
+    const tz = Store.state.settings.tz || "Asia/Riyadh";
+    const loc = P.locale === "ar" ? "ar" : "en";
+    const num = (v) => (loc === "ar" && P.arabicDigits !== false ? toArabicDigits(v) : String(v));
+
+    if (w.type === "text") {
+      body.style.whiteSpace = "pre-wrap";
+      body.style.lineHeight = String(P.lineHeight || 1.2);
+      body.textContent = P.text || "";
+      return;
+    }
+
+    if (w.type === "clock") {
+      const out = h("div", { class: "cd-num" });
+      body.append(out);
+      const upd = () => {
+        const p = tzParts(tz, new Date());
+        let hh = p.h, suffix = "";
+        if (P.h12) {
+          suffix = " " + (hh >= 12 ? (loc === "ar" ? "م" : "PM") : (loc === "ar" ? "ص" : "AM"));
+          hh = hh % 12 || 12;
+        }
+        let s = String(P.h12 ? hh : String(hh).padStart(2, "0")) + ":" + String(p.mi).padStart(2, "0");
+        if (P.seconds !== false) s += ":" + String(p.s).padStart(2, "0");
+        out.textContent = num(s) + suffix;
+      };
+      upd(); this.updaters.push(upd);
+      return;
+    }
+
+    if (w.type === "date") {
+      const out = h("div");
+      body.append(out);
+      const upd = () => {
+        const now = new Date();
+        const style = P.dateStyle === "short" ? "short" : "long";
+        const greg = new Intl.DateTimeFormat(loc === "ar" ? "ar-SA-u-ca-gregory" : "en-GB", {
+          timeZone: tz, dateStyle: style
+        }).format(now);
+        let hij = "";
+        try {
+          hij = new Intl.DateTimeFormat((loc === "ar" ? "ar-SA" : "en-GB") + "-u-ca-islamic-umalqura", {
+            timeZone: tz, dateStyle: style
+          }).format(now);
+        } catch (e) { hij = ""; }
+        const cal = P.calendar || "gregorian";
+        if (cal === "hijri") out.textContent = hij || greg;
+        else if (cal === "both") {
+          clear(out);
+          out.append(h("div", null, greg));
+          if (hij) out.append(h("div", { style: { fontSize: "0.62em", opacity: ".72" } }, hij));
+        } else out.textContent = greg;
+      };
+      upd(); this.updaters.push(upd);
+      return;
+    }
+
+    if (w.type === "countdown") {
+      const labels = loc === "ar"
+        ? { d: "يوم", h: "ساعة", m: "دقيقة", s: "ثانية" }
+        : { d: "Days", h: "Hours", m: "Minutes", s: "Seconds" };
+      const units = ["d", "h", "m", "s"].filter((u) => !(u === "s" && P.showSeconds === false));
+      const row = h("div", { class: "cd-row", style: { gap: (S.gap ?? 24) + "px", justifyContent: body.parentElement.style.justifyContent } });
+      const cells = {};
+      for (const u of units) {
+        const n = h("div", { class: "cd-num" }, "00");
+        const cell = h("div", { class: "cd-cell" }, n);
+        if (P.showLabels !== false) cell.append(h("div", { class: "cd-lab", style: { fontSize: Math.round((S.size || 60) * 0.26) + "px", fontWeight: "400" } }, labels[u]));
+        cells[u] = n;
+        row.append(cell);
+      }
+      body.append(row);
+      const upd = () => {
+        const target = P.targetDate
+          ? zonedToEpoch(tz, ...P.targetDate.split("-").map(Number), ...String(P.targetTime || "00:00").split(":").map(Number))
+          : Date.now();
+        let diff = Math.max(0, target - Date.now()) / 1000;
+        const d = Math.floor(diff / 86400); diff -= d * 86400;
+        const hh = Math.floor(diff / 3600); diff -= hh * 3600;
+        const mm = Math.floor(diff / 60);
+        const ss = Math.floor(diff - mm * 60);
+        const map = { d, h: hh, m: mm, s: ss };
+        for (const u of units) cells[u].textContent = num(String(map[u]).padStart(2, "0"));
+      };
+      upd(); this.updaters.push(upd);
+      return;
+    }
+
+    if (w.type === "qr") {
+      const pad = S.pad || 0;
+      const wrap = h("div", { style: { width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center" } });
+      try {
+        wrap.innerHTML = QR.toSvg(P.url || "https://example.com", {
+          ecl: "M",
+          quiet: P.quiet ?? 2,
+          dark: P.dark || "#000000",
+          light: P.light || "#ffffff",
+          radius: 0
+        });
+        const svg = wrap.querySelector("svg");
+        svg.style.width = "100%"; svg.style.height = "100%";
+        svg.style.maxWidth = "100%"; svg.style.maxHeight = "100%";
+      } catch (e) {
+        wrap.textContent = "—";
+      }
+      body.style.height = "100%";
+      body.style.padding = "0";
+      body.append(wrap);
+      void pad;
+      return;
+    }
+
+    if (w.type === "logo") {
+      const img = h("img", { alt: "", style: { width: "100%", height: "100%", objectFit: "contain", display: "block" } });
+      body.style.height = "100%";
+      body.append(img);
+      if (P.mediaId) this._url(P.mediaId).then((u) => { if (u) img.src = u; });
+      return;
+    }
+  }
+
+  refreshWidgets() { this._wgSig = null; this._renderWidgets(this.cfg ? this.cfg.widgets || [] : []); }
+  setSelected(id) { if (this.selected !== id) { this.selected = id; this.refreshWidgets(); } }
+
+  /* ---------- interactive editing ---------- */
+  _bindEditing() {
+    let drag = null;
+    const pctOf = (px, axis) => (px / this.scale) / (axis === "x" ? this.screen.dw : this.screen.dh) * 100;
+
+    this.wgLayer.addEventListener("pointerdown", (ev) => {
+      const handle = ev.target.closest(".handle");
+      const el = ev.target.closest(".wg");
+      if (!el) return;
+      const id = el.dataset.id;
+      const w = (this.cfg.widgets || []).find((x) => x.id === id);
+      if (!w || w.locked) return;
+      if (this.opts.onSelect) this.opts.onSelect(id);
+      ev.preventDefault();
+      el.setPointerCapture?.(ev.pointerId);
+      drag = {
+        id, el, w: deep(w), startX: ev.clientX, startY: ev.clientY,
+        corner: handle ? handle.dataset.corner : null
+      };
+    });
+
+    const move = (ev) => {
+      if (!drag) return;
+      const dx = pctOf(ev.clientX - drag.startX, "x");
+      const dy = pctOf(ev.clientY - drag.startY, "y");
+      const o = drag.w;
+      let n = { x: o.x, y: o.y, w: o.w, h: o.h };
+      if (!drag.corner) {
+        n.x = clamp(o.x + dx, -20, 120 - 0);
+        n.y = clamp(o.y + dy, -20, 120);
+        if (!ev.altKey) {
+          const cx = n.x + n.w / 2, cy = n.y + n.h / 2;
+          if (Math.abs(cx - 50) < 1.2) n.x = 50 - n.w / 2;
+          if (Math.abs(cy - 50) < 1.2) n.y = 50 - n.h / 2;
+          n.x = Math.round(n.x * 10) / 10;
+          n.y = Math.round(n.y * 10) / 10;
+        }
+      } else {
+        const c = drag.corner;
+        if (c.includes("e")) n.w = Math.max(2, o.w + dx);
+        if (c.includes("s")) n.h = Math.max(2, o.h + dy);
+        if (c.includes("w")) { n.w = Math.max(2, o.w - dx); n.x = o.x + (o.w - n.w); }
+        if (c.includes("n")) { n.h = Math.max(2, o.h - dy); n.y = o.y + (o.h - n.h); }
+        n.w = Math.round(n.w * 10) / 10; n.h = Math.round(n.h * 10) / 10;
+      }
+      Object.assign(drag.el.style, { left: n.x + "%", top: n.y + "%", width: n.w + "%", height: n.h + "%" });
+      drag.next = n;
+    };
+
+    const up = () => {
+      if (!drag) return;
+      const d = drag; drag = null;
+      if (d.next && this.opts.onGeometry) this.opts.onGeometry(d.id, d.next);
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", up);
+    window.addEventListener("pointercancel", up);
+    this._unbind = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", up);
+      window.removeEventListener("pointercancel", up);
+    };
+    this.wgLayer.addEventListener("pointerdown", (ev) => {
+      if (!ev.target.closest(".wg") && this.opts.onSelect) this.opts.onSelect(null);
+    });
+  }
+
+  destroy() {
+    clearInterval(this._tick);
+    clearTimeout(this.timer);
+    this._ro.disconnect();
+    if (this._unbind) this._unbind();
+    clear(this.host);
+  }
+}
+
+function hexA(hex, alpha) {
+  const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "#000000");
+  if (!m) return `rgba(0,0,0,${alpha ?? 0})`;
+  return `rgba(${parseInt(m[1], 16)},${parseInt(m[2], 16)},${parseInt(m[3], 16)},${alpha ?? 0})`;
+}
+
+
+/* ============================================================
+   Admin desk.
+   ============================================================ */
+const App = (() => {
+  let page = "screens";
+  let screenId = null;
+  let sel = { kind: null, id: null };
+  let stage = null;
+  const beats = new Map();          // screenId -> last heartbeat ms
+  let els = {};
+
+  const screen = () => Store.screen(screenId) || Store.state.screens[0];
+  const cfg = () => screen() && screen().draft;
+  const tz = () => Store.state.settings.tz || "Asia/Riyadh";
+  const screenName = (s) => (s.name && (s.name[getLang()] || s.name.en)) || s.id;
+  const isOnline = (id) => Date.now() - (beats.get(id) || 0) < 9000;
+  const activePlaylist = () => {
+    const c = cfg();
+    return (c.playlists.find((p) => p.id === c.activePlaylistId) || c.playlists[0]);
+  };
+  const dirty = (s) => JSON.stringify(s.draft) !== JSON.stringify(s.live);
+
+  function displayUrl(id) {
+    if (Net.mode === "server") return location.origin + "/display/" + id;
+    return location.href.split("#")[0] + "#/display/" + id;
+  }
+
+  /* ---------------- boot ---------------- */
+  async function start() {
+    document.body.classList.remove("display-mode");
+    const saved = await Net.loadState();
+    if (saved) Store.set(saved);
+    else Store.update(() => {}, { reason: "init" });
+    setLang(Store.state.lang || "en");
+    screenId = Store.state.screens[0].id;
+    buildShell();
+    Net.on("state", async () => {
+      await Store.reload();
+      setLang(Store.state.lang || "en");
+      render();
+      syncStage();
+    });
+    Net.on("beat", (b) => {
+      if (!b || !b.screenId) return;
+      const was = isOnline(b.screenId);
+      beats.set(b.screenId, Date.now());
+      if (!was) { renderTop(); if (page === "screens") renderPage(); }
+    });
+    setInterval(() => { renderTop(); if (page === "screens") renderPage(); }, 4000);
+    render();
+    syncStage();
+    bindKeys();
+  }
+
+  /* ---------------- shell ---------------- */
+  function buildShell() {
+    const app = h("div", { id: "app" });
+    els.top = h("div", { class: "top" });
+    els.rail = h("nav", { class: "rail" });
+    els.center = h("div", { class: "stage-wrap" });
+    els.insp = h("aside", { class: "insp" });
+    app.append(els.top, els.rail, els.center, els.insp);
+    clear(document.body).append(app);
+  }
+
+  function render() {
+    document.documentElement.lang = getLang();
+    document.body.dir = isRTL() ? "rtl" : "ltr";
+    renderTop();
+    renderRail();
+    renderPage();
+    renderInspector();
+  }
+
+  /* ---------------- top bar ---------------- */
+  function renderTop() {
+    if (!els.top) return;
+    const s = screen();
+    clear(els.top);
+    const brand = h("div", { class: "brandmark" },
+      h("div", { class: "glyph" }),
+      h("div", null, h("b", null, t("appName")), h("span", null, t("appSub"))));
+
+    const picker = h("div", { class: "screen-picker", role: "group" });
+    for (const sc of Store.state.screens) {
+      picker.append(h("button", {
+        "aria-pressed": String(sc.id === screenId),
+        onclick: () => { screenId = sc.id; sel = { kind: null, id: null }; render(); syncStage(); }
+      },
+        h("span", { class: "dot " + (isOnline(sc.id) ? "on" : "") }),
+        screenName(sc),
+        h("span", { class: "ratio" }, ratioLabel(sc))));
+    }
+
+    const on = isOnline(s.id);
+    const status = h("div", { class: "status-chip" },
+      h("span", { class: "dot " + (on ? "on" : "off") }),
+      on ? t("online") : t("offline"));
+
+    const unpub = dirty(s);
+    els.top.append(brand, picker, status, h("div", { class: "spacer" }),
+      h("button", { class: "btn quiet", onclick: toggleLang, title: t("interfaceLang") }, icon("globe"), getLang() === "en" ? "عربي" : "EN"),
+      h("button", { class: "btn ghost", onclick: () => window.open(displayUrl(s.id), "_blank", "noopener") }, icon("ext"), t("preview")),
+      h("button", { class: "btn ghost", onclick: saveDraft }, t("saveDraft")),
+      h("button", {
+        class: "btn primary" + (unpub ? " pulse-live" : ""),
+        onclick: () => publish(s.id),
+        title: unpub ? t("unpublished") : t("allPublished")
+      }, unpub ? h("span", { class: "unpub-dot" }) : icon("check"), t("publish")));
+  }
+
+  const ratioLabel = (s) => (s.profile === "portrait" ? "2:9" : "2:1");
+
+  function toggleLang() {
+    const next = getLang() === "en" ? "ar" : "en";
+    setLang(next);
+    Store.update((st) => { st.lang = next; });
+    render();
+    if (stage) stage.refreshWidgets();
+  }
+
+  /* ---------------- rail ---------------- */
+  function renderRail() {
+    const c = cfg();
+    const nav = [
+      ["screens", "screens", Store.state.screens.length],
+      ["media", "media", Store.state.media.length],
+      ["playlist", "playlist", activePlaylist().items.length],
+      ["widgets", "widgets", c.widgets.length],
+      ["schedule", "schedule", c.schedules.length],
+      ["settings", "settings", null]
+    ];
+    clear(els.rail);
+    for (const [id, ic, count] of nav) {
+      els.rail.append(h("button", {
+        "aria-current": page === id ? "page" : null,
+        onclick: () => { page = id; sel = { kind: null, id: null }; renderRail(); renderPage(); renderInspector(); }
+      }, icon(ic), h("span", { class: "lbl" }, t(id)), count !== null ? h("span", { class: "count" }, count) : null));
+    }
+    els.rail.append(h("div", { class: "foot" }, t("workflow")));
+  }
+
+  /* ---------------- centre ---------------- */
+  const STAGE_PAGES = ["playlist", "widgets"];
+
+  function renderPage() {
+    const usesStage = STAGE_PAGES.includes(page);
+    if (usesStage) { renderStageView(); return; }
+    if (stage) { stage.destroy(); stage = null; }
+    clear(els.center);
+    const wrap = h("div", { class: "page" });
+    els.center.append(wrap);
+    if (page === "screens") pageScreens(wrap);
+    else if (page === "media") pageMedia(wrap);
+    else if (page === "schedule") pageSchedule(wrap);
+    else if (page === "settings") pageSettings(wrap);
+  }
+
+  function renderStageView() {
+    if (!els.center.querySelector(".stage-area")) {
+      clear(els.center);
+      els.stageHead = h("div", { class: "stage-head" });
+      els.stageArea = h("div", { class: "stage-area" });
+      els.transport = h("div", { class: "transport" });
+      els.center.append(els.stageHead, els.stageArea, els.transport);
+      stage = null;
+    }
+    if (!stage) {
+      stage = new Stage(els.stageArea, {
+        interactive: true,
+        chrome: true,
+        onSelect: (id) => { sel = id ? { kind: "widget", id } : { kind: null, id: null }; if (page !== "widgets") page = "widgets"; stage.setSelected(id); renderRail(); renderInspector(); },
+        onGeometry: (id, geo) => {
+          Store.update((st) => {
+            const w = st.screens.find((x) => x.id === screenId).draft.widgets.find((x) => x.id === id);
+            Object.assign(w, geo);
+          }, { silent: true });
+          touch(); renderInspector();
+        },
+        onTick: (info) => paintTransport(info)
+      });
+    }
+    stage.setSelected(page === "widgets" && sel.kind === "widget" ? sel.id : null);
+    renderStageHead();
+    syncStage();
+    renderTransport();
+  }
+
+  function renderStageHead() {
+    const s = screen();
+    const g = Store.state.settings.guides;
+    clear(els.stageHead);
+    const res = resolvePlaylist(cfg(), tz());
+    els.stageHead.append(
+      h("span", { class: "title" }, screenName(s)),
+      h("span", { class: "meta" }, `${s.wM < 1 ? s.wM.toFixed(2) : s.wM} × ${s.hM < 1 ? s.hM.toFixed(2) : s.hM} m · ${ratioLabel(s)} · ${s.dw}×${s.dh}`),
+      res && res.block ? h("span", { class: "meta", style: { color: "var(--live)" } }, "▸ " + res.block.name) : null,
+      h("div", { class: "sp" }),
+      guideControls(g));
+  }
+
+  function guideControls(g) {
+    const wrap = h("div", { class: "inline" });
+    const apply = () => { stage.setGuides(Store.state.settings.guides); renderStageHead(); };
+    wrap.append(h("label", { class: "inline hint" },
+      h("input", {
+        type: "checkbox", checked: g.on,
+        onchange: (e) => { Store.update((st) => { st.settings.guides.on = e.target.checked; }, { silent: true }); apply(); }
+      }), t("guides")));
+    const row = h("div", { class: "seg" });
+    for (const [key, label] of [["safe", t("safeArea")], ["center", t("centerLines")], ["grid", t("grid")]]) {
+      row.append(h("button", {
+        "aria-pressed": String(!!g[key]), disabled: !g.on,
+        onclick: () => { Store.update((st) => { st.settings.guides[key] = !st.settings.guides[key]; }, { silent: true }); apply(); }
+      }, label));
+    }
+    wrap.append(row);
+    return wrap;
+  }
+
+  function syncStage() {
+    if (!stage) return;
+    const s = screen();
+    stage.setScreen(s);
+    stage.setGuides(Store.state.settings.guides);
+    const res = resolvePlaylist(s.draft, tz());
+    stage.apply(s.draft, res ? res.playlist : null);
+  }
+
+  function renderTransport() {
+    const c = cfg();
+    clear(els.transport);
+    const btn = (ic, label, fn, pressed) => h("button", {
+      class: "btn ghost icon" + (pressed ? " primary" : ""), title: label, "aria-label": label, onclick: fn
+    }, icon(ic));
+    els.progressBar = h("i");
+    els.nowName = h("b", null, t("nothingPlaying"));
+    els.nowTime = h("span", { class: "sub" }, "");
+    els.playBtn = btn("pause", t("pause"), () => cmd("toggle"));
+    els.transport.append(
+      btn("prev", t("prev"), () => cmd("prev")),
+      els.playBtn,
+      btn("next", t("next"), () => cmd("next")),
+      h("div", { class: "now" }, els.nowName, els.nowTime),
+      h("div", { class: "progress" }, els.progressBar),
+      btn("loop", t("loop"), () => { Store.update((st) => { const d = st.screens.find((x) => x.id === screenId).draft; d.loop = !d.loop; }); touch(); renderTransport(); }, c.loop),
+      btn("shuffle", t("shuffle"), () => { Store.update((st) => { const d = st.screens.find((x) => x.id === screenId).draft; d.shuffle = !d.shuffle; }); touch(); renderTransport(); }, c.shuffle),
+      btn("power", c.blackout ? t("showContent") : t("blackout"), toggleBlackout, c.blackout),
+      btn("refresh", t("reloadScreen"), () => { Net.sendCmd({ screenId, cmd: "reload" }); Toast.show(t("reloadScreen")); }));
+  }
+
+  function paintTransport(info) {
+    if (!els.nowName) return;
+    els.nowName.textContent = info.name || t("nothingPlaying");
+    els.nowTime.textContent = info.count ? `${(info.index + 1) || 0} ${t("of")} ${info.count} · ${fmtClock(info.elapsed)}${info.total ? " / " + fmtClock(info.total) : ""}` : "";
+    els.progressBar.style.width = info.total ? clamp((info.elapsed / info.total) * 100, 0, 100) + "%" : "0%";
+    const want = info.playing ? "pause" : "play";
+    if (els.playBtn.dataset.state !== want) {
+      els.playBtn.dataset.state = want;
+      clear(els.playBtn).append(icon(want));
+      els.playBtn.title = info.playing ? t("pause") : t("play");
+    }
+  }
+
+  function cmd(which) {
+    if (stage) {
+      if (which === "toggle") stage.toggle();
+      else if (which === "next") stage.next();
+      else if (which === "prev") stage.prev();
+    }
+    const remote = which === "toggle" ? (stage && stage.playing ? "play" : "pause") : which;
+    Net.sendCmd({ screenId, cmd: remote });
+  }
+
+  function toggleBlackout() {
+    Store.update((st) => {
+      const s = st.screens.find((x) => x.id === screenId);
+      s.draft.blackout = !s.draft.blackout;
+      if (s.live) s.live.blackout = s.draft.blackout;   // blackout is always immediate
+      s.liveRev = (s.liveRev || 0) + 1;
+    });
+    syncStage(); renderTransport();
+  }
+
+  /* ---------------- pages ---------------- */
+  function pageScreens(wrap) {
+    wrap.append(h("div", { class: "page-head" },
+      h("div", null,
+        h("h1", null, t("screens")),
+        h("p", { class: "lede" }, Net.mode === "server" ? t("serverModeHint") : t("localModeHint"))),
+      h("div", { class: "sp" }),
+      h("button", { class: "btn", onclick: addScreenDialog }, icon("plus"), t("addScreen"))));
+
+    const grid = h("div", { class: "screen-cards" });
+    for (const s of Store.state.screens) {
+      const on = isOnline(s.id);
+      const mini = h("div", { class: "mini" });
+      const mw = s.profile === "portrait" ? 44 : 188;
+      mini.style.width = mw + "px";
+      mini.style.height = Math.round(mw * (s.hM / s.wM)) + "px";
+      if (s.live) {
+        const res = resolvePlaylist(s.live, tz());
+        const first = res && res.playlist.items[0];
+        const rec = first && Store.media(first.mediaId);
+        if (rec && rec.thumb) mini.style.background = `#000 url(${rec.thumb}) center/contain no-repeat`;
+      }
+      const card = h("div", { class: "screen-card" + (s.id === screenId ? " active" : "") },
+        h("div", { class: "inline" },
+          h("span", { class: "dot " + (on ? "on" : "off") }),
+          h("b", null, screenName(s)),
+          h("div", { class: "sp", style: { flex: 1 } }),
+          h("span", { class: "hint" }, on ? t("online") : t("offline"))),
+        mini,
+        h("div", { class: "hint" },
+          `${s.wM < 1 ? s.wM.toFixed(2) : s.wM} × ${s.hM < 1 ? s.hM.toFixed(2) : s.hM} m · ${ratioLabel(s)}`,
+          " · ",
+          s.publishedAt ? new Date(s.publishedAt).toLocaleString(getLang() === "ar" ? "ar-SA" : "en-GB") : t("never")),
+        h("div", { class: "url" },
+          h("code", null, displayUrl(s.id)),
+          h("button", { class: "btn quiet sm", title: t("copyUrl"), onclick: () => copy(displayUrl(s.id)) }, icon("copy"))),
+        h("div", { class: "row" },
+          h("button", { class: "btn sm", onclick: () => { screenId = s.id; page = "playlist"; render(); syncStage(); } }, t("addToScreen")),
+          h("button", { class: "btn sm ghost", onclick: () => window.open(displayUrl(s.id), "_blank", "noopener") }, icon("ext"), t("openDisplay")),
+          h("button", { class: "btn sm ghost", onclick: () => { Net.sendCmd({ screenId: s.id, cmd: "reload" }); Toast.show(t("reloadScreen")); } }, icon("refresh"))));
+      card.addEventListener("click", (e) => { if (!e.target.closest("button")) { screenId = s.id; sel = { kind: "screen", id: s.id }; render(); } });
+      grid.append(card);
+    }
+    wrap.append(grid);
+  }
+
+  function pageMedia(wrap) {
+    wrap.append(h("div", { class: "page-head" },
+      h("div", null, h("h1", null, t("media")), h("p", { class: "lede" }, t("uploadTypes"))),
+      h("div", { class: "sp" }),
+      h("button", { class: "btn primary", onclick: pickFiles }, icon("upload"), t("upload"))));
+
+    const drop = h("div", { class: "drop" },
+      h("div", null, t("uploadHint")),
+      h("div", { style: { marginTop: "10px" } }, h("button", { class: "btn", onclick: pickFiles }, t("browse"))));
+    ["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("hot"); }));
+    ["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, () => drop.classList.remove("hot")));
+    drop.addEventListener("drop", (e) => { e.preventDefault(); handleFiles(e.dataTransfer.files); });
+    wrap.append(drop);
+
+    if (!Store.state.media.length) {
+      wrap.append(h("div", { class: "empty-state" }, h("b", null, t("mediaEmpty")), t("mediaEmptyHint")));
+      return;
+    }
+    const grid = h("div", { class: "media-grid", style: { marginTop: "18px" } });
+    for (const m of Store.state.media) {
+      const card = h("div", {
+        class: "card" + (sel.kind === "media" && sel.id === m.id ? " sel" : ""),
+        onclick: () => { sel = { kind: "media", id: m.id }; renderPage(); renderInspector(); },
+        ondblclick: () => addMediaToScreen(m.id)
+      },
+        h("div", { class: "ph" },
+          m.thumb ? h("div", { class: "img", style: { backgroundImage: `url(${m.thumb})` } }) : null,
+          h("span", { class: "tag" }, m.kind === "video" ? t("video") : t("image"))),
+        h("div", { class: "cap" },
+          h("div", { class: "nm" }, m.name),
+          h("div", { class: "sub" }, `${m.w}×${m.h} · ${fmtBytes(m.size)}${m.kind === "video" && m.dur ? " · " + fmtClock(m.dur) : ""}`)));
+      grid.append(card);
+    }
+    wrap.append(grid);
+  }
+
+  function pageSchedule(wrap) {
+    const c = cfg();
+    wrap.append(h("div", { class: "page-head" },
+      h("div", null, h("h1", null, t("schedule")), h("p", { class: "lede" }, t("scheduleHelp"))),
+      h("div", { class: "sp" }),
+      h("button", { class: "btn", onclick: addSchedule }, icon("plus"), t("newSchedule"))));
+
+    if (!c.schedules.length) {
+      wrap.append(h("div", { class: "empty-state" }, h("b", null, t("scheduleEmpty")), t("scheduleEmptyHint")));
+      return;
+    }
+    const now = resolvePlaylist(c, tz());
+    const table = h("table", { class: "tbl" },
+      h("thead", null, h("tr", null,
+        h("th", null, t("scheduleName")), h("th", null, t("playlist")),
+        h("th", null, t("starts")), h("th", null, t("ends")),
+        h("th", null, t("repeat")), h("th", null, ""))));
+    const tb = h("tbody");
+    for (const b of c.schedules) {
+      const pl = c.playlists.find((p) => p.id === b.playlistId);
+      const live = now && now.block && now.block.id === b.id;
+      tb.append(h("tr", {
+        class: b.enabled === false ? "off" : "",
+        style: { cursor: "pointer", background: sel.kind === "schedule" && sel.id === b.id ? "#17262a" : "" },
+        onclick: () => { sel = { kind: "schedule", id: b.id }; renderPage(); renderInspector(); }
+      },
+        h("td", null, b.name || t("untitled"), live ? h("span", { class: "now-badge" }, " · " + t("playsNow")) : null),
+        h("td", null, pl ? pl.name : "—"),
+        h("td", null, (b.startTime || "00:00") + (b.startDate ? " · " + b.startDate : "")),
+        h("td", null, (b.endTime || "24:00") + (b.endDate ? " · " + b.endDate : "")),
+        h("td", null, t(b.repeat === "custom" ? "customDays" : b.repeat || "daily")),
+        h("td", null, h("button", {
+          class: "btn quiet sm danger", onclick: (e) => { e.stopPropagation(); removeSchedule(b.id); }
+        }, icon("trash")))));
+    }
+    table.append(tb);
+    wrap.append(table);
+  }
+
+  function pageSettings(wrap) {
+    const st = Store.state;
+    wrap.append(h("h1", null, t("settings")));
+    const box = h("div", { style: { maxWidth: "620px" } });
+
+    box.append(h("div", { class: "sect" }, h("h3", null, t("connection")),
+      h("div", { class: "inline" }, h("span", { class: "dot " + (Net.mode === "server" ? "on" : "") }),
+        h("b", null, Net.mode === "server" ? t("serverMode") : t("localMode"))),
+      h("p", { class: "hint" }, Net.mode === "server" ? t("serverModeHint") : t("localModeHint"))));
+
+    box.append(h("div", { class: "sect" }, h("h3", null, t("interfaceLang")),
+      seg([["en", t("english")], ["ar", t("arabic")]], getLang(), (v) => { if (v !== getLang()) toggleLang(); })));
+
+    box.append(h("div", { class: "sect" }, h("h3", null, t("timezone")),
+      h("select", {
+        onchange: (e) => { Store.update((s) => { s.settings.tz = e.target.value; }); syncStage(); }
+      }, ["Asia/Riyadh", "Asia/Dubai", "Europe/London", "UTC"].map((z) =>
+        h("option", { value: z, selected: tz() === z }, z))),
+      h("p", { class: "hint" }, t("scheduleHelp"))));
+
+    box.append(h("div", { class: "sect" }, h("h3", null, t("liveEdit")),
+      h("label", { class: "inline" },
+        h("input", {
+          type: "checkbox", checked: !!st.settings.liveEdit,
+          onchange: (e) => Store.update((s) => { s.settings.liveEdit = e.target.checked; })
+        }), t("liveEdit")),
+      h("p", { class: "hint" }, t("liveEditHint"))));
+
+    box.append(h("div", { class: "sect" }, h("h3", null, t("storage")),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: exportBackup }, t("exportBackup")),
+        h("button", { class: "btn", onclick: importBackup }, t("importBackup")),
+        h("button", { class: "btn danger", onclick: resetAll }, t("resetAll"))),
+      h("p", { class: "hint" }, t("restoreWarn"))));
+    wrap.append(box);
+  }
+
+  /* ---------------- inspector ---------------- */
+  function renderInspector() {
+    clear(els.insp);
+    const head = h("div", { class: "insp-head" });
+    const body = h("div", { class: "insp-body" });
+    els.insp.append(head, body);
+
+    if (page === "playlist") { head.append(h("h2", null, t("playlist"))); inspPlaylist(body); return; }
+    if (page === "widgets") { head.append(h("h2", null, t("widgets"))); inspWidgets(head, body); return; }
+    if (page === "media") { head.append(h("h2", null, t("media"))); inspMedia(body); return; }
+    if (page === "screens") { head.append(h("h2", null, t("screenStatus"))); inspScreen(body); return; }
+    if (page === "schedule") { head.append(h("h2", null, t("schedule"))); inspSchedule(body); return; }
+    head.append(h("h2", null, t("settings")));
+    body.append(h("p", { class: "hint" }, t("workflow")));
+  }
+
+  /* --- playlist inspector --- */
+  function inspPlaylist(body) {
+    const c = cfg();
+    const pl = activePlaylist();
+
+    const sw = h("div", { class: "field" },
+      h("label", null, t("playlists")),
+      h("div", { class: "row" },
+        h("select", {
+          onchange: (e) => { Store.update((st) => { st.screens.find((x) => x.id === screenId).draft.activePlaylistId = e.target.value; }); touch(); render(); syncStage(); }
+        }, c.playlists.map((p) => h("option", { value: p.id, selected: p.id === c.activePlaylistId }, `${p.name} · ${p.items.length}`))),
+        h("button", { class: "btn icon", title: t("newPlaylist"), onclick: newPlaylist }, icon("plus"))));
+    body.append(sw);
+    body.append(h("div", { class: "row", style: { marginBottom: "12px" } },
+      h("button", { class: "btn sm ghost", onclick: () => renamePlaylist(pl.id) }, t("rename")),
+      c.playlists.length > 1 ? h("button", { class: "btn sm ghost danger", onclick: () => deletePlaylist(pl.id) }, t("remove")) : null));
+
+    if (!pl.items.length) {
+      body.append(h("div", { class: "empty-state" }, h("b", null, t("playlistEmpty")), t("playlistEmptyHint"),
+        h("div", { style: { marginTop: "12px" } }, h("button", { class: "btn", onclick: () => { page = "media"; renderRail(); renderPage(); renderInspector(); } }, t("media")))));
+    } else {
+      const list = h("div", { class: "panel-list" });
+      pl.items.forEach((it, i) => {
+        const m = Store.media(it.mediaId);
+        if (!m) return;
+        const row = h("div", {
+          class: "item" + (sel.kind === "item" && sel.id === it.id ? " sel" : ""),
+          dataset: { id: it.id },
+          onclick: () => { sel = { kind: "item", id: it.id }; renderInspector(); if (stage) stage.goTo(i); }
+        },
+          h("span", { class: "grip", html: I.grip }),
+          h("span", { class: "thumb", style: { backgroundImage: m.thumb ? `url(${m.thumb})` : "none" } },
+            m.kind === "video" ? h("span", { class: "vid" }, "▶") : null),
+          h("span", { class: "nm" }, m.name),
+          h("span", { class: "sub" }, m.kind === "video" ? t("fullVideo") : (it.seconds || 10) + "s"),
+          h("button", { class: "btn quiet sm danger", onclick: (e) => { e.stopPropagation(); removeItem(it.id); } }, icon("trash")));
+        list.append(row);
+      });
+      makeSortable(list, (from, to) => {
+        Store.update((st) => {
+          const p = st.screens.find((x) => x.id === screenId).draft.playlists.find((x) => x.id === pl.id);
+          p.items.splice(to, 0, p.items.splice(from, 1)[0]);
+        });
+        touch(); renderInspector(); syncStage();
+      });
+      body.append(list);
+      body.append(h("p", { class: "hint", style: { marginTop: "8px" } }, t("dragToReorder")));
+    }
+
+    const item = pl.items.find((i) => i.id === sel.id);
+    if (item) {
+      const m = Store.media(item.mediaId);
+      const s = h("div", { class: "sect" }, h("h3", null, m ? m.name : t("untitled")));
+      if (m && m.kind === "image") {
+        s.append(h("div", { class: "field" }, h("label", null, t("duration")),
+          h("div", { class: "inline" },
+            h("input", {
+              type: "number", min: "1", max: "600", value: item.seconds || 10,
+              oninput: (e) => editItem(item.id, (i) => { i.seconds = clamp(+e.target.value || 10, 1, 600); })
+            }), h("span", { class: "hint" }, t("seconds")))));
+      } else if (m) {
+        s.append(h("p", { class: "hint" }, t("fullVideo") + (m.dur ? " · " + fmtClock(m.dur) : "")));
+      }
+      s.append(h("div", { class: "field" }, h("label", null, t("fitMode")),
+        seg([["fit", t("fit")], ["fill", t("fill")], ["stretch", t("stretch")], ["original", t("original")]],
+          item.fit || "fit", (v) => { editItem(item.id, (i) => { i.fit = v; }); renderInspector(); }),
+        h("p", { class: "hint", style: { marginTop: "6px" } }, t("fitHelp"))));
+      body.append(s);
+    }
+
+    const tr = h("div", { class: "sect" }, h("h3", null, t("transition")),
+      seg([["cut", t("cut")], ["fade", t("fade")], ["crossfade", t("crossfade")]], c.transition,
+        (v) => { Store.update((st) => { st.screens.find((x) => x.id === screenId).draft.transition = v; }); touch(); renderInspector(); }),
+      h("div", { class: "field", style: { marginTop: "10px" } },
+        h("label", null, `${t("transitionLen")} · ${c.transitionMs} ms`),
+        h("input", {
+          type: "range", min: "0", max: "2000", step: "50", value: c.transitionMs,
+          oninput: (e) => { Store.update((st) => { st.screens.find((x) => x.id === screenId).draft.transitionMs = +e.target.value; }, { silent: true }); e.target.previousElementSibling.textContent = `${t("transitionLen")} · ${e.target.value} ms`; touch(); }
+        })));
+    body.append(tr);
+  }
+
+  /* --- widgets inspector --- */
+  function inspWidgets(head, body) {
+    const c = cfg();
+    head.append(h("div", { class: "sp" }), h("button", { class: "btn sm", onclick: (e) => widgetMenu(e.currentTarget) }, icon("plus"), t("addWidget")));
+
+    if (!c.widgets.length) {
+      body.append(h("div", { class: "empty-state" }, h("b", null, t("widgetsEmpty")), t("widgetsEmptyHint")));
+      return;
+    }
+    const list = h("div", { class: "panel-list" });
+    for (const w of c.widgets) {
+      list.append(h("div", {
+        class: "item" + (sel.id === w.id ? " sel" : "") + (w.hidden ? " hidden-w" : ""),
+        onclick: () => { sel = { kind: "widget", id: w.id }; stage.setSelected(w.id); renderInspector(); }
+      },
+        h("span", { class: "nm" }, t(w.type === "date" ? "date" : w.type)),
+        h("span", { class: "sub" }, w.type === "text" ? (w.props.text || "").slice(0, 14) : ""),
+        h("button", { class: "btn quiet sm", title: w.hidden ? t("show") : t("hide"), onclick: (e) => { e.stopPropagation(); editWidget(w.id, (x) => { x.hidden = !x.hidden; }); renderInspector(); } }, icon(w.hidden ? "eyeOff" : "eye")),
+        h("button", { class: "btn quiet sm", title: w.locked ? t("unlock") : t("lock"), onclick: (e) => { e.stopPropagation(); editWidget(w.id, (x) => { x.locked = !x.locked; }); renderInspector(); } }, icon(w.locked ? "lock" : "unlock"))));
+    }
+    body.append(list);
+
+    const w = c.widgets.find((x) => x.id === sel.id);
+    if (!w) { body.append(h("p", { class: "hint", style: { marginTop: "14px" } }, t("inspectorEmptyHint"))); return; }
+    widgetEditor(body, w);
+  }
+
+  function widgetEditor(body, w) {
+    const S = w.style, P = w.props;
+    const up = (fn) => { editWidget(w.id, fn); };
+    const numField = (label, key, min, max, step = 1) => h("div", { class: "field" },
+      h("label", null, label),
+      h("input", {
+        type: "number", value: w[key], min, max, step,
+        oninput: (e) => { up((x) => { x[key] = clamp(round(+e.target.value, 1), min, max); }); }
+      }));
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("position")),
+      h("div", { class: "row" }, numField("X %", "x", -20, 120), numField("Y %", "y", -20, 120)),
+      h("div", { class: "row" }, numField(t("sizeLabel") + " W %", "w", 1, 140), numField("H %", "h", 1, 140)),
+      h("div", { class: "field" }, h("label", null, t("alignTo")), alignGrid(w)),
+      h("div", { class: "row" },
+        h("button", { class: "btn sm ghost", onclick: () => duplicateWidget(w.id) }, t("duplicate")),
+        h("button", { class: "btn sm ghost danger", onclick: () => deleteWidget(w.id) }, icon("trash"), t("del")))));
+
+    /* type-specific */
+    const spec = h("div", { class: "sect" }, h("h3", null, t(w.type)));
+    const setP = (k, v) => up((x) => { x.props[k] = v; });
+
+    if (w.type === "countdown") {
+      spec.append(
+        h("div", { class: "row" },
+          h("div", { class: "field" }, h("label", null, t("targetDate")),
+            h("input", { type: "date", value: P.targetDate || "", onchange: (e) => setP("targetDate", e.target.value) })),
+          h("div", { class: "field" }, h("label", null, t("targetTime")),
+            h("input", { type: "time", value: P.targetTime || "00:00", onchange: (e) => setP("targetTime", e.target.value) }))),
+        checkbox(t("widgetLabelsShow"), P.showLabels !== false, (v) => setP("showLabels", v)),
+        checkbox(t("showSeconds"), P.showSeconds !== false, (v) => setP("showSeconds", v)),
+        h("div", { class: "field" }, h("label", null, t("language")),
+          seg([["en", "EN"], ["ar", "ع"]], P.locale || "en", (v) => setP("locale", v))),
+        rangeField(t("spacing"), S.gap ?? 24, 0, 240, (v) => up((x) => { x.style.gap = v; })));
+    }
+    if (w.type === "clock") {
+      spec.append(
+        h("div", { class: "field" }, h("label", null, t("hourFormat")),
+          seg([["24", t("h24")], ["12", t("h12")]], P.h12 ? "12" : "24", (v) => setP("h12", v === "12"))),
+        checkbox(t("showSeconds"), P.seconds !== false, (v) => setP("seconds", v)),
+        h("div", { class: "field" }, h("label", null, t("language")),
+          seg([["en", "EN"], ["ar", "ع"]], P.locale || "en", (v) => setP("locale", v))));
+    }
+    if (w.type === "date") {
+      spec.append(
+        h("div", { class: "field" }, h("label", null, t("calendar")),
+          seg([["gregorian", t("gregorian")], ["hijri", t("hijri")], ["both", t("both")]], P.calendar || "gregorian", (v) => setP("calendar", v))),
+        h("div", { class: "field" }, h("label", null, t("dateStyle")),
+          seg([["long", t("long")], ["short", t("short")]], P.dateStyle || "long", (v) => setP("dateStyle", v))),
+        h("div", { class: "field" }, h("label", null, t("language")),
+          seg([["en", "EN"], ["ar", "ع"]], P.locale || "en", (v) => setP("locale", v))));
+    }
+    if (w.type === "text") {
+      spec.append(h("div", { class: "field" }, h("label", null, t("content")),
+        h("textarea", { value: P.text || "", oninput: (e) => setP("text", e.target.value) })));
+    }
+    if (w.type === "qr") {
+      spec.append(
+        h("div", { class: "field" }, h("label", null, t("url")),
+          h("input", { type: "url", dir: "ltr", value: P.url || "", placeholder: "https://", oninput: (e) => setP("url", e.target.value) }),
+          h("p", { class: "hint", style: { marginTop: "6px" } }, t("qrUrlHint"))),
+        h("div", { class: "row" },
+          colorField(t("color"), P.dark || "#000000", (v) => setP("dark", v)),
+          colorField(t("background"), P.light || "#ffffff", (v) => setP("light", v))));
+    }
+    if (w.type === "logo") {
+      const m = P.mediaId && Store.media(P.mediaId);
+      spec.append(h("div", { class: "field" }, h("label", null, t("logoSource")),
+        h("div", { class: "inline" },
+          h("span", {
+            class: "thumb", style: {
+              width: "48px", height: "34px", borderRadius: "4px", display: "block",
+              background: m && m.thumb ? `#0a1214 url(${m.thumb}) center/contain no-repeat` : "#0a1214"
+            }
+          }),
+          h("button", { class: "btn sm", onclick: () => pickMedia("image", (id) => setP("mediaId", id)) }, t("pickImage")),
+          h("span", { class: "hint" }, m ? m.name : t("noLogo")))));
+    }
+    body.append(spec);
+
+    /* shared styling */
+    if (w.type !== "qr" && w.type !== "logo") {
+      body.append(h("div", { class: "sect" }, h("h3", null, t("font")),
+        h("div", { class: "field" },
+          h("select", { onchange: (e) => up((x) => { x.style.font = e.target.value; }) },
+            FONTS.map((f) => h("option", { value: f.id, selected: S.font === f.id }, f.label)))),
+        h("div", { class: "row" },
+          h("div", { class: "field" }, h("label", null, t("size")),
+            h("input", { type: "number", min: "8", max: "900", value: S.size, oninput: (e) => up((x) => { x.style.size = clamp(+e.target.value || 10, 8, 900); }) })),
+          h("div", { class: "field" }, h("label", null, t("weight")),
+            h("select", { onchange: (e) => up((x) => { x.style.weight = +e.target.value; }) },
+              [300, 400, 500, 600, 700, 800, 900].map((v) => h("option", { value: v, selected: +S.weight === v }, v))))),
+        h("div", { class: "field" }, h("label", null, t("align")),
+          seg([["left", "⌐"], ["center", "≡"], ["right", "¬"]], S.align || "center", (v) => up((x) => { x.style.align = v; }))),
+        h("div", { class: "row" },
+          colorField(t("color"), S.color || "#ffffff", (v) => up((x) => { x.style.color = v; })),
+          w.type === "text" || w.type === "countdown"
+            ? h("div", { class: "field" }, h("label", null, t("letterSpacing")),
+              h("input", { type: "number", value: S.letter || 0, min: "-20", max: "60", oninput: (e) => up((x) => { x.style.letter = +e.target.value || 0; }) }))
+            : null)));
+    }
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("background")),
+      colorField(t("color"), S.bg || "#000000", (v) => up((x) => { x.style.bg = v; })),
+      rangeField(t("transparency"), Math.round((1 - (S.bgOpacity ?? 0)) * 100), 0, 100, (v) => up((x) => { x.style.bgOpacity = round(1 - v / 100, 2); }), "%"),
+      rangeField(t("radius"), S.radius || 0, 0, 400, (v) => up((x) => { x.style.radius = v; }), "px"),
+      rangeField(t("spacing"), S.pad || 0, 0, 200, (v) => up((x) => { x.style.pad = v; }), "px"),
+      rangeField(t("opacity"), Math.round((S.opacity ?? 1) * 100), 10, 100, (v) => up((x) => { x.style.opacity = round(v / 100, 2); }), "%")));
+  }
+
+  function alignGrid(w) {
+    const g = h("div", { class: "align-grid" });
+    const spots = [["left", "top"], ["center", "top"], ["right", "top"],
+    ["left", "middle"], ["center", "middle"], ["right", "middle"],
+    ["left", "bottom"], ["center", "bottom"], ["right", "bottom"]];
+    for (const [hx, vy] of spots) {
+      g.append(h("button", {
+        title: `${hx} ${vy}`,
+        style: {
+          alignItems: vy === "top" ? "flex-start" : vy === "bottom" ? "flex-end" : "center",
+          justifyContent: hx === "left" ? "flex-start" : hx === "right" ? "flex-end" : "center"
+        },
+        onclick: () => {
+          const m = 5;   // keep inside the safe area
+          editWidget(w.id, (x) => {
+            x.x = hx === "left" ? m : hx === "right" ? 100 - m - x.w : round((100 - x.w) / 2, 1);
+            x.y = vy === "top" ? m : vy === "bottom" ? 100 - m - x.h : round((100 - x.h) / 2, 1);
+          });
+          renderInspector();
+        }
+      }, h("i")));
+    }
+    return g;
+  }
+
+  /* --- media inspector --- */
+  function inspMedia(body) {
+    const m = sel.kind === "media" && Store.media(sel.id);
+    if (!m) { body.append(h("div", { class: "empty-state" }, h("b", null, t("inspectorEmpty")), t("inspectorEmptyHint"))); return; }
+    body.append(h("div", {
+      style: {
+        aspectRatio: "16/10", background: `#000 ${m.thumb ? `url(${m.thumb}) center/contain no-repeat` : ""}`,
+        borderRadius: "10px", border: "1px solid var(--line-soft)", marginBottom: "12px"
+      }
+    }));
+    body.append(h("div", { class: "field" }, h("label", null, t("rename")),
+      h("input", { type: "text", value: m.name, oninput: (e) => Store.update((st) => { Store.media(m.id).name = e.target.value; void st; }, { silent: true }) })));
+    body.append(h("p", { class: "hint" }, `${m.kind === "video" ? t("video") : t("image")} · ${m.w}×${m.h} · ${fmtBytes(m.size)}${m.dur ? " · " + fmtClock(m.dur) : ""}`));
+
+    const uses = Store.state.screens.reduce((n, s) => n + s.draft.playlists.reduce((k, p) => k + p.items.filter((i) => i.mediaId === m.id).length, 0), 0);
+    body.append(h("p", { class: "hint" }, uses ? t("mediaInUse", { n: uses }) : t("unused")));
+
+    body.append(h("div", { class: "sect" },
+      h("button", { class: "btn primary", style: { width: "100%", justifyContent: "center" }, onclick: () => addMediaToScreen(m.id) }, t("addToScreen")),
+      h("button", { class: "btn", style: { width: "100%", justifyContent: "center", marginTop: "8px" }, onclick: () => choosePlaylistFor(m.id) }, t("addToPlaylist")),
+      h("div", { class: "row", style: { marginTop: "8px" } },
+        h("button", { class: "btn", onclick: () => previewMedia(m.id) }, icon("eye"), t("preview")),
+        h("button", { class: "btn", onclick: () => replaceMedia(m.id) }, t("replace")),
+        h("button", { class: "btn danger", onclick: () => deleteMedia(m.id) }, icon("trash"), t("remove"))),
+      h("p", { class: "hint", style: { marginTop: "8px" } }, t("replaceHint"))));
+  }
+
+  /* --- screen inspector --- */
+  function inspScreen(body) {
+    const s = screen();
+    const on = isOnline(s.id);
+    body.append(h("div", { class: "inline", style: { marginBottom: "10px" } },
+      h("span", { class: "dot " + (on ? "on" : "off") }), h("b", null, screenName(s))));
+    body.append(h("p", { class: "hint" }, on ? t("online") : t("noSignal")));
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("screenName")),
+      h("div", { class: "field" }, h("label", null, t("english")),
+        h("input", { type: "text", value: s.name.en, oninput: (e) => Store.update((st) => { st.screens.find((x) => x.id === s.id).name.en = e.target.value; }, { silent: true }) })),
+      h("div", { class: "field" }, h("label", null, t("arabic")),
+        h("input", { type: "text", dir: "rtl", value: s.name.ar, oninput: (e) => Store.update((st) => { st.screens.find((x) => x.id === s.id).name.ar = e.target.value; }, { silent: true }) }))));
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("physical")),
+      h("div", { class: "row" },
+        h("div", { class: "field" }, h("label", null, t("width_m")),
+          h("input", { type: "number", step: "0.05", min: "0.1", value: s.wM, onchange: (e) => resizeScreen(s.id, +e.target.value, s.hM) })),
+        h("div", { class: "field" }, h("label", null, t("height_m")),
+          h("input", { type: "number", step: "0.05", min: "0.1", value: s.hM, onchange: (e) => resizeScreen(s.id, s.wM, +e.target.value) }))),
+      h("p", { class: "hint" }, `${t("resolution")}: ${s.dw} × ${s.dh} · ${t("ratio")} ${ratioLabel(s)}`)));
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("displayUrl")),
+      h("div", { class: "url" }, h("code", null, displayUrl(s.id)),
+        h("button", { class: "btn quiet sm", onclick: () => copy(displayUrl(s.id)) }, icon("copy")))));
+
+    body.append(h("div", { class: "sect" }, h("h3", null, t("liveControl")),
+      h("div", { class: "row" },
+        h("button", { class: "btn", onclick: () => { Net.sendCmd({ screenId: s.id, cmd: "reload" }); Toast.show(t("reloadScreen")); } }, icon("refresh"), t("reloadScreen")),
+        h("button", { class: "btn", onclick: () => publish(s.id) }, t("publish"))),
+      h("p", { class: "hint", style: { marginTop: "8px" } },
+        `${t("lastPublished")}: ${s.publishedAt ? new Date(s.publishedAt).toLocaleString(getLang() === "ar" ? "ar-SA" : "en-GB") : t("never")}`)));
+
+    if (Store.state.screens.length > 1) {
+      body.append(h("div", { class: "sect" },
+        h("button", { class: "btn danger", onclick: () => removeScreen(s.id) }, icon("trash"), t("removeScreen")),
+        h("p", { class: "hint", style: { marginTop: "8px" } }, t("deleteScreenWarn"))));
+    }
+  }
+
+  /* --- schedule inspector --- */
+  function inspSchedule(body) {
+    const c = cfg();
+    const b = c.schedules.find((x) => x.id === sel.id);
+    if (!b) {
+      body.append(h("div", { class: "empty-state" }, h("b", null, t("inspectorEmpty")), t("scheduleEmptyHint")));
+      body.append(h("button", { class: "btn", style: { width: "100%", justifyContent: "center" }, onclick: addSchedule }, icon("plus"), t("newSchedule")));
+      return;
+    }
+    const up = (fn) => { Store.update((st) => { fn(st.screens.find((x) => x.id === screenId).draft.schedules.find((x) => x.id === b.id)); }, { silent: true }); touch(); renderPage(); };
+    body.append(h("div", { class: "field" }, h("label", null, t("scheduleName")),
+      h("input", { type: "text", value: b.name || "", oninput: (e) => up((x) => { x.name = e.target.value; }) })));
+    body.append(h("div", { class: "field" }, h("label", null, t("playlist")),
+      h("select", { onchange: (e) => up((x) => { x.playlistId = e.target.value; }) },
+        c.playlists.map((p) => h("option", { value: p.id, selected: p.id === b.playlistId }, p.name)))));
+    body.append(h("div", { class: "row" },
+      h("div", { class: "field" }, h("label", null, t("starts")),
+        h("input", { type: "time", value: b.startTime || "08:00", onchange: (e) => up((x) => { x.startTime = e.target.value; }) })),
+      h("div", { class: "field" }, h("label", null, t("ends")),
+        h("input", { type: "time", value: b.endTime || "12:00", onchange: (e) => up((x) => { x.endTime = e.target.value; }) }))));
+    body.append(h("div", { class: "row" },
+      h("div", { class: "field" }, h("label", null, t("starts")),
+        h("input", { type: "date", value: b.startDate || "", onchange: (e) => up((x) => { x.startDate = e.target.value; }) })),
+      h("div", { class: "field" }, h("label", null, t("ends")),
+        h("input", { type: "date", value: b.endDate || "", onchange: (e) => up((x) => { x.endDate = e.target.value; }) }))));
+    body.append(h("div", { class: "field" }, h("label", null, t("repeat")),
+      h("select", { onchange: (e) => { up((x) => { x.repeat = e.target.value; }); renderInspector(); } },
+        ["daily", "weekdays", "weekends", "custom", "once"].map((r) =>
+          h("option", { value: r, selected: (b.repeat || "daily") === r }, t(r === "custom" ? "customDays" : r))))));
+    if ((b.repeat || "daily") === "custom") {
+      const names = getLang() === "ar"
+        ? ["أحد", "اثنين", "ثلاثاء", "أربعاء", "خميس", "جمعة", "سبت"]
+        : ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+      const row = h("div", { class: "seg" });
+      names.forEach((n, i) => row.append(h("button", {
+        "aria-pressed": String((b.days || []).includes(i)),
+        onclick: () => { up((x) => { const d = new Set(x.days || []); d.has(i) ? d.delete(i) : d.add(i); x.days = [...d].sort(); }); renderInspector(); }
+      }, n)));
+      body.append(h("div", { class: "field" }, h("label", null, t("days")), row));
+    }
+    body.append(checkbox(t("enabled"), b.enabled !== false, (v) => { up((x) => { x.enabled = v; }); }));
+    body.append(h("div", { class: "sect" },
+      h("button", { class: "btn danger", onclick: () => removeSchedule(b.id) }, icon("trash"), t("remove"))));
+  }
+
+  /* ----------------小 controls ---------------- */
+  function seg(options, value, onPick) {
+    const g = h("div", { class: "seg" });
+    for (const [v, label] of options) {
+      const b = h("button", {
+        "aria-pressed": String(v === value),
+        onclick: () => {
+          [...g.children].forEach((c) => c.setAttribute("aria-pressed", "false"));
+          b.setAttribute("aria-pressed", "true");
+          onPick(v);
+        }
+      }, label);
+      g.append(b);
+    }
+    return g;
+  }
+  function checkbox(label, value, onChange) {
+    return h("label", { class: "inline", style: { marginBottom: "10px" } },
+      h("input", { type: "checkbox", checked: value, onchange: (e) => onChange(e.target.checked) }), label);
+  }
+  function colorField(label, value, onChange) {
+    return h("div", { class: "field" }, h("label", null, label),
+      h("input", { type: "color", value, oninput: (e) => onChange(e.target.value) }));
+  }
+  function rangeField(label, value, min, max, onChange, unit = "") {
+    const lab = h("label", null, `${label} · ${value}${unit}`);
+    return h("div", { class: "field" }, lab,
+      h("input", {
+        type: "range", min, max, value,
+        oninput: (e) => { lab.textContent = `${label} · ${e.target.value}${unit}`; onChange(+e.target.value); }
+      }));
+  }
+
+  function makeSortable(list, onReorder) {
+    let drag = null;
+    list.addEventListener("pointerdown", (e) => {
+      const grip = e.target.closest(".grip");
+      if (!grip) return;
+      const row = grip.closest(".item");
+      const rows = [...list.children];
+      drag = { row, from: rows.indexOf(row) };
+      row.classList.add("dragging");
+      row.setPointerCapture?.(e.pointerId);
+      e.preventDefault();
+    });
+    list.addEventListener("pointermove", (e) => {
+      if (!drag) return;
+      const rows = [...list.children].filter((r) => r !== drag.row);
+      let placed = false;
+      for (const r of rows) {
+        const box = r.getBoundingClientRect();
+        if (e.clientY < box.top + box.height / 2) { list.insertBefore(drag.row, r); placed = true; break; }
+      }
+      if (!placed) list.append(drag.row);
+    });
+    const end = () => {
+      if (!drag) return;
+      drag.row.classList.remove("dragging");
+      const to = [...list.children].indexOf(drag.row);
+      const from = drag.from;
+      drag = null;
+      if (to !== from && to >= 0) onReorder(from, to);
+    };
+    list.addEventListener("pointerup", end);
+    list.addEventListener("pointercancel", end);
+  }
+
+  /* ---------------- mutations ---------------- */
+  function touch() {
+    syncStage();
+    renderTop();
+    if (Store.state.settings.liveEdit) publish(screenId, true);
+  }
+
+  function editWidget(id, fn) {
+    Store.update((st) => {
+      const w = st.screens.find((x) => x.id === screenId).draft.widgets.find((x) => x.id === id);
+      if (w) fn(w);
+    }, { silent: true });
+    if (stage) stage.refreshWidgets();
+    touch();
+  }
+
+  function editItem(id, fn) {
+    Store.update((st) => {
+      for (const p of st.screens.find((x) => x.id === screenId).draft.playlists) {
+        const it = p.items.find((i) => i.id === id);
+        if (it) fn(it);
+      }
+    }, { silent: true });
+    touch();
+  }
+
+  function saveDraft() { Store.flush().then(() => Toast.show(t("draftSaved"))); }
+
+  function publish(id, quiet = false) {
+    Store.update((st) => {
+      const s = st.screens.find((x) => x.id === id);
+      s.live = deep(s.draft);
+      s.liveRev = (s.liveRev || 0) + 1;
+      s.publishedAt = Date.now();
+    });
+    if (!quiet) Store.flush();
+    renderTop();
+    if (!quiet) Toast.show(t("publishedTo", { name: screenName(Store.screen(id)) }));
+  }
+
+  function addMediaToScreen(mediaId) {
+    const m = Store.media(mediaId);
+    const pl = activePlaylist();
+    Store.update((st) => {
+      const p = st.screens.find((x) => x.id === screenId).draft.playlists.find((x) => x.id === pl.id);
+      p.items.push({ id: uid("it"), mediaId, seconds: m.kind === "video" ? 0 : 10, fit: "fit" });
+    });
+    Toast.show(t("added", { name: pl.name }));
+    page = "playlist";
+    sel = { kind: null, id: null };
+    render(); syncStage();
+  }
+
+  function choosePlaylistFor(mediaId) {
+    const c = cfg();
+    const list = h("div", { class: "panel-list" });
+    for (const p of c.playlists) {
+      list.append(h("div", {
+        class: "item",
+        onclick: () => { addMediaToPlaylist(mediaId, p.id); closeModal(); }
+      }, h("span", { class: "nm" }, p.name), h("span", { class: "sub" }, `${p.items.length} ${t("items")}`)));
+    }
+    list.append(h("div", { class: "item", onclick: () => { closeModal(); newPlaylist(); } },
+      h("span", { class: "nm" }, t("newPlaylist"))));
+    openModal(h("div", { class: "modal", style: { width: "420px" } },
+      h("header", null, h("h2", null, t("addToPlaylist")), h("div", { class: "sp" }),
+        h("button", { class: "btn quiet icon", onclick: closeModal }, icon("close"))),
+      h("div", { class: "mbody" }, list)));
+  }
+
+  function addMediaToPlaylist(mediaId, playlistId) {
+    const m = Store.media(mediaId);
+    Store.update((st) => {
+      const p = st.screens.find((x) => x.id === screenId).draft.playlists.find((x) => x.id === playlistId);
+      p.items.push({ id: uid("it"), mediaId, seconds: m.kind === "video" ? 0 : 10, fit: "fit" });
+    });
+    const pl = cfg().playlists.find((p) => p.id === playlistId);
+    Toast.show(t("added", { name: pl.name }));
+    touch(); renderRail();
+  }
+
+  function removeItem(id) {
+    Store.update((st) => {
+      for (const p of st.screens.find((x) => x.id === screenId).draft.playlists) {
+        const i = p.items.findIndex((x) => x.id === id);
+        if (i >= 0) p.items.splice(i, 1);
+      }
+    });
+    if (sel.id === id) sel = { kind: null, id: null };
+    touch(); renderRail(); renderInspector();
+  }
+
+  function newPlaylist() {
+    const name = prompt(t("playlistName"), t("newPlaylist"));
+    if (!name) return;
+    const id = uid("pl");
+    Store.update((st) => {
+      const d = st.screens.find((x) => x.id === screenId).draft;
+      d.playlists.push({ id, name, items: [] });
+      d.activePlaylistId = id;
+    });
+    touch(); render(); syncStage();
+  }
+  function renamePlaylist(id) {
+    const pl = cfg().playlists.find((p) => p.id === id);
+    const name = prompt(t("playlistName"), pl.name);
+    if (!name) return;
+    Store.update((st) => { st.screens.find((x) => x.id === screenId).draft.playlists.find((p) => p.id === id).name = name; });
+    touch(); renderInspector();
+  }
+  function deletePlaylist(id) {
+    Store.update((st) => {
+      const d = st.screens.find((x) => x.id === screenId).draft;
+      d.playlists = d.playlists.filter((p) => p.id !== id);
+      d.schedules = d.schedules.filter((s) => s.playlistId !== id);
+      if (d.activePlaylistId === id) d.activePlaylistId = d.playlists[0].id;
+    });
+    touch(); render(); syncStage();
+  }
+
+  const WIDGET_DEFAULTS = {
+    countdown: { w: 60, h: 22, style: { size: 120, weight: 700, align: "center", color: "#ffffff", bg: "#000000", bgOpacity: 0, radius: 0, pad: 0, gap: 40 }, props: { targetDate: isoDateIn(30), targetTime: "19:00", locale: "en", showLabels: true, showSeconds: true } },
+    clock: { w: 30, h: 12, style: { size: 110, weight: 600, align: "center", color: "#ffffff", bg: "#000000", bgOpacity: 0, radius: 0, pad: 0 }, props: { h12: false, seconds: true, locale: "en" } },
+    date: { w: 40, h: 10, style: { size: 60, weight: 500, align: "center", color: "#ffffff", bg: "#000000", bgOpacity: 0, radius: 0, pad: 0 }, props: { calendar: "both", dateStyle: "long", locale: "en" } },
+    text: { w: 50, h: 14, style: { size: 72, weight: 600, align: "center", color: "#ffffff", bg: "#000000", bgOpacity: 0, radius: 0, pad: 16 }, props: { text: "Welcome", lineHeight: 1.2 } },
+    qr: { w: 14, h: 26, style: { size: 40, bg: "#ffffff", bgOpacity: 0, radius: 0, pad: 0 }, props: { url: "https://", dark: "#000000", light: "#ffffff", quiet: 2 } },
+    logo: { w: 16, h: 18, style: { bg: "#000000", bgOpacity: 0, radius: 0, pad: 0 }, props: {} }
+  };
+
+  function isoDateIn(days) {
+    const d = new Date(Date.now() + days * 86400000);
+    return d.toISOString().slice(0, 10);
+  }
+
+  function widgetMenu(anchor) {
+    const box = h("div", { class: "modal", style: { width: "340px" } },
+      h("header", null, h("h2", null, t("addWidget")), h("div", { class: "sp" })),
+      h("div", { class: "mbody panel-list" }));
+    const list = box.querySelector(".mbody");
+    for (const type of ["countdown", "clock", "date", "text", "qr", "logo"]) {
+      list.append(h("div", { class: "item", onclick: () => { addWidget(type); closeModal(); } },
+        h("span", { class: "nm" }, t(type))));
+    }
+    openModal(box);
+    void anchor;
+  }
+
+  function addWidget(type) {
+    const d = WIDGET_DEFAULTS[type];
+    const s = screen();
+    // portrait screens want smaller default boxes relative to width
+    const w = s.profile === "portrait" ? Math.min(88, d.w * 1.6) : d.w;
+    const id = uid("wg");
+    Store.update((st) => {
+      const cfgd = st.screens.find((x) => x.id === screenId).draft;
+      cfgd.widgets.push({
+        id, type,
+        x: round((100 - w) / 2, 1), y: type === "logo" ? 6 : round((100 - d.h) / 2, 1),
+        w, h: d.h, hidden: false, locked: false, z: cfgd.widgets.length + 1,
+        style: Object.assign({ font: "sans", letter: 0, opacity: 1 }, d.style),
+        props: deep(d.props)
+      });
+    });
+    sel = { kind: "widget", id };
+    page = "widgets";
+    render(); syncStage();
+    if (stage) stage.setSelected(id);
+  }
+
+  function duplicateWidget(id) {
+    const src = cfg().widgets.find((w) => w.id === id);
+    const copyW = deep(src);
+    copyW.id = uid("wg");
+    copyW.x = clamp(copyW.x + 3, 0, 95);
+    copyW.y = clamp(copyW.y + 3, 0, 95);
+    copyW.z = cfg().widgets.length + 1;
+    Store.update((st) => { st.screens.find((x) => x.id === screenId).draft.widgets.push(copyW); });
+    sel = { kind: "widget", id: copyW.id };
+    touch(); renderInspector(); if (stage) stage.setSelected(copyW.id);
+  }
+
+  function deleteWidget(id) {
+    Store.update((st) => {
+      const d = st.screens.find((x) => x.id === screenId).draft;
+      d.widgets = d.widgets.filter((w) => w.id !== id);
+    });
+    sel = { kind: null, id: null };
+    touch(); renderRail(); renderInspector(); if (stage) { stage.setSelected(null); stage.refreshWidgets(); }
+  }
+
+  function addSchedule() {
+    const c = cfg();
+    const id = uid("sc");
+    Store.update((st) => {
+      st.screens.find((x) => x.id === screenId).draft.schedules.push({
+        id, name: t("newSchedule"), playlistId: c.activePlaylistId,
+        startTime: "08:00", endTime: "12:00", startDate: "", endDate: "",
+        repeat: "daily", days: [], enabled: true
+      });
+    });
+    sel = { kind: "schedule", id };
+    touch(); renderRail(); renderPage(); renderInspector();
+  }
+  function removeSchedule(id) {
+    Store.update((st) => {
+      const d = st.screens.find((x) => x.id === screenId).draft;
+      d.schedules = d.schedules.filter((s) => s.id !== id);
+    });
+    if (sel.id === id) sel = { kind: null, id: null };
+    touch(); renderRail(); renderPage(); renderInspector();
+  }
+
+  function resizeScreen(id, wM, hM) {
+    if (!(wM > 0 && hM > 0)) return;
+    const { dw, dh } = designSize(wM, hM);
+    Store.update((st) => {
+      const s = st.screens.find((x) => x.id === id);
+      s.wM = wM; s.hM = hM; s.dw = dw; s.dh = dh;
+      s.profile = wM >= hM ? "landscape" : "portrait";
+    });
+    render(); syncStage();
+  }
+
+  function addScreenDialog() {
+    const state = { nameEn: "New screen", nameAr: "شاشة جديدة", id: "", wM: 0.6, hM: 2.7 };
+    const idField = h("input", { type: "text", dir: "ltr", placeholder: "vertical-3", oninput: (e) => { state.id = e.target.value; } });
+    const box = h("div", { class: "modal" },
+      h("header", null, h("h2", null, t("addScreen"))),
+      h("div", { class: "mbody" },
+        h("div", { class: "row" },
+          h("div", { class: "field" }, h("label", null, t("english")),
+            h("input", { type: "text", value: state.nameEn, oninput: (e) => { state.nameEn = e.target.value; } })),
+          h("div", { class: "field" }, h("label", null, t("arabic")),
+            h("input", { type: "text", dir: "rtl", value: state.nameAr, oninput: (e) => { state.nameAr = e.target.value; } }))),
+        h("div", { class: "field" }, h("label", null, t("displayUrl")), idField),
+        h("div", { class: "row" },
+          h("div", { class: "field" }, h("label", null, t("width_m")),
+            h("input", { type: "number", step: "0.05", value: state.wM, oninput: (e) => { state.wM = +e.target.value; } })),
+          h("div", { class: "field" }, h("label", null, t("height_m")),
+            h("input", { type: "number", step: "0.05", value: state.hM, oninput: (e) => { state.hM = +e.target.value; } })))),
+      h("footer", null,
+        h("button", { class: "btn ghost", onclick: closeModal }, t("cancel")),
+        h("button", {
+          class: "btn primary", onclick: () => {
+            const slug = (state.id || state.nameEn).toLowerCase().replace(/[^a-z0-9-]+/g, "-").replace(/^-|-$/g, "") || uid("scr");
+            if (Store.screen(slug)) { Toast.show("This link is already taken.", true); return; }
+            Store.update((st) => {
+              st.screens.push(newScreen(slug, state.nameEn, state.nameAr, state.wM, state.hM, state.wM >= state.hM ? "landscape" : "portrait"));
+            });
+            screenId = slug;
+            closeModal(); render(); syncStage();
+          }
+        }, t("add"))));
+    openModal(box);
+  }
+
+  function removeScreen(id) {
+    confirmDialog(t("confirmDelete", { name: screenName(Store.screen(id)) }), t("deleteScreenWarn"), () => {
+      Store.update((st) => { st.screens = st.screens.filter((s) => s.id !== id); });
+      if (screenId === id) screenId = Store.state.screens[0].id;
+      render(); syncStage();
+    });
+  }
+
+  /* ---------------- media handling ---------------- */
+  function pickFiles() {
+    const inp = h("input", { type: "file", multiple: true, accept: "image/*,video/mp4,video/webm" });
+    inp.onchange = () => handleFiles(inp.files);
+    inp.click();
+  }
+
+  async function handleFiles(files) {
+    for (const f of Array.from(files || [])) {
+      try {
+        const rec = await ingestFile(f);
+        Store.update((st) => { st.media.unshift(rec); });
+      } catch (e) { Toast.show(e.message || String(e), true); }
+    }
+    renderRail(); renderPage();
+  }
+
+  function replaceMedia(id) {
+    const inp = h("input", { type: "file", accept: "image/*,video/mp4,video/webm" });
+    inp.onchange = async () => {
+      const f = inp.files[0];
+      if (!f) return;
+      try {
+        const fresh = await ingestFile(f);
+        const old = Store.media(id);
+        await Net.delMedia(old);
+        if (!fresh.url) {                       // browser-local: move the blob onto the existing id
+          const blob = await IDB.get(fresh.id).catch(() => null);
+          if (blob) { await IDB.put(id, blob); await IDB.del(fresh.id).catch(() => {}); }
+        }
+        Store.update((st) => {
+          const m = st.media.find((x) => x.id === id);
+          Object.assign(m, {
+            kind: fresh.kind, mime: fresh.mime, size: fresh.size,
+            w: fresh.w, h: fresh.h, dur: fresh.dur, thumb: fresh.thumb, url: fresh.url
+          });
+        });
+        if (stage) stage.urlCache.delete(id);
+        Toast.show(t("saved"));
+        renderPage(); renderInspector(); syncStage();
+      } catch (e) { Toast.show(e.message || String(e), true); }
+    };
+    inp.click();
+  }
+
+  function deleteMedia(id) {
+    const m = Store.media(id);
+    confirmDialog(t("confirmDelete", { name: m.name }), t("confirmDeleteMedia"), async () => {
+      await Net.delMedia(m);
+      Store.update((st) => {
+        st.media = st.media.filter((x) => x.id !== id);
+        for (const s of st.screens) {
+          for (const c of [s.draft, s.live].filter(Boolean)) {
+            for (const p of c.playlists) p.items = p.items.filter((i) => i.mediaId !== id);
+            for (const w of c.widgets) if (w.props && w.props.mediaId === id) delete w.props.mediaId;
+          }
+        }
+      });
+      sel = { kind: null, id: null };
+      render(); syncStage();
+      Toast.show(t("removed"));
+    });
+  }
+
+  async function previewMedia(id) {
+    const m = Store.media(id);
+    const url = await Net.mediaUrl(m).catch(() => null);
+    const view = url
+      ? (m.kind === "video"
+        ? h("video", { src: url, controls: "", autoplay: true, muted: true, playsinline: "", style: { width: "100%", maxHeight: "70vh", background: "#000", display: "block" } })
+        : h("img", { src: url, alt: m.name, style: { width: "100%", maxHeight: "70vh", objectFit: "contain", background: "#000", display: "block" } }))
+      : h("div", { class: "empty-state" }, h("b", null, t("mediaEmpty")), t("mediaEmptyHint"));
+    openModal(h("div", { class: "modal wide" },
+      h("header", null, h("h2", null, m.name), h("div", { class: "sp" }),
+        h("button", { class: "btn quiet icon", onclick: closeModal }, icon("close"))),
+      h("div", { class: "mbody" }, view,
+        h("p", { class: "hint", style: { marginTop: "10px" } },
+          `${m.w}×${m.h} · ${fmtBytes(m.size)}${m.dur ? " · " + fmtClock(m.dur) : ""}`))));
+  }
+
+  function pickMedia(kind, onPick) {
+    const grid = h("div", { class: "media-grid" });
+    const list = Store.state.media.filter((m) => !kind || m.kind === kind);
+    if (!list.length) grid.append(h("div", { class: "empty-state" }, h("b", null, t("mediaEmpty")), t("mediaEmptyHint")));
+    for (const m of list) {
+      grid.append(h("div", { class: "card", onclick: () => { onPick(m.id); closeModal(); renderInspector(); } },
+        h("div", { class: "ph" }, m.thumb ? h("div", { class: "img", style: { backgroundImage: `url(${m.thumb})` } }) : null),
+        h("div", { class: "cap" }, h("div", { class: "nm" }, m.name))));
+    }
+    openModal(h("div", { class: "modal wide" },
+      h("header", null, h("h2", null, t("pickImage")), h("div", { class: "sp" }),
+        h("button", { class: "btn quiet icon", onclick: closeModal }, icon("close"))),
+      h("div", { class: "mbody" }, grid)));
+  }
+
+  /* ---------------- backup ---------------- */
+  function exportBackup() {
+    const blob = new Blob([JSON.stringify(Store.state, null, 2)], { type: "application/json" });
+    const a = h("a", { href: URL.createObjectURL(blob), download: "signage-backup.json" });
+    a.click();
+    Toast.show(t("backupDone"));
+  }
+  function importBackup() {
+    const inp = h("input", { type: "file", accept: "application/json" });
+    inp.onchange = async () => {
+      const f = inp.files[0]; if (!f) return;
+      try {
+        const j = JSON.parse(await f.text());
+        if (!j.screens) throw new Error("bad file");
+        confirmDialog(t("importBackup"), t("restoreWarn"), () => {
+          Store.set(j);
+          Store.update(() => {});
+          setLang(j.lang || "en");
+          screenId = j.screens[0].id;
+          render(); syncStage();
+          Toast.show(t("restoreDone"));
+        });
+      } catch (e) { Toast.show(String(e.message || e), true); }
+    };
+    inp.click();
+  }
+  function resetAll() {
+    confirmDialog(t("resetAll"), t("resetWarn"), async () => {
+      await IDB.clear().catch(() => {});
+      Store.set(defaultState());
+      Store.update(() => {});
+      screenId = Store.state.screens[0].id;
+      render(); syncStage();
+    });
+  }
+
+  /* ---------------- modal helpers ---------------- */
+  let scrim = null;
+  function openModal(node) {
+    closeModal();
+    scrim = h("div", { class: "scrim", onclick: (e) => { if (e.target === scrim) closeModal(); } }, node);
+    document.body.append(scrim);
+    const f = node.querySelector("input, button");
+    if (f) f.focus();
+  }
+  function closeModal() { if (scrim) { scrim.remove(); scrim = null; } }
+  function confirmDialog(title, text, onYes) {
+    openModal(h("div", { class: "modal", style: { width: "420px" } },
+      h("header", null, h("h2", null, title)),
+      h("div", { class: "mbody" }, h("p", { class: "hint" }, text)),
+      h("footer", null,
+        h("button", { class: "btn ghost", onclick: closeModal }, t("cancel")),
+        h("button", { class: "btn danger", onclick: () => { closeModal(); onYes(); } }, t("done")))));
+  }
+
+  function copy(text) {
+    navigator.clipboard?.writeText(text).then(() => Toast.show(t("copied")),
+      () => Toast.show(text, false));
+  }
+
+  /* ---------------- keyboard ---------------- */
+  function bindKeys() {
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { closeModal(); return; }
+      const tag = (e.target.tagName || "").toLowerCase();
+      if (["input", "textarea", "select"].includes(tag)) return;
+      if (page === "widgets" && sel.kind === "widget") {
+        const step = e.shiftKey ? 2 : 0.5;
+        const map = { ArrowLeft: ["x", -step], ArrowRight: ["x", step], ArrowUp: ["y", -step], ArrowDown: ["y", step] };
+        if (map[e.key]) {
+          e.preventDefault();
+          const [k, d] = map[e.key];
+          editWidget(sel.id, (w) => { w[k] = round(clamp(w[k] + d, -20, 120), 1); });
+          renderInspector();
+          return;
+        }
+        if (e.key === "Delete" || e.key === "Backspace") { e.preventDefault(); deleteWidget(sel.id); return; }
+        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "d") { e.preventDefault(); duplicateWidget(sel.id); return; }
+      }
+      if (e.code === "Space" && STAGE_PAGES.includes(page)) { e.preventDefault(); cmd("toggle"); }
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") { e.preventDefault(); saveDraft(); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "Enter") { e.preventDefault(); publish(screenId); }
+    });
+  }
+
+  return { start };
+})();
+
+
+/* ============================================================
+   Display runtime — what runs on the player attached to the wall.
+   No chrome, no cursor, keeps the last good frame if the link drops.
+   ============================================================ */
+const Display = (() => {
+  let screenId = null;
+  let stage = null;
+  let lastSig = null;
+  let lastPlaylistId = null;
+
+  async function start(id) {
+    screenId = id;
+    document.body.classList.add("display-mode");
+    const root = h("div", { id: "display-root" });
+    const flag = h("div", { id: "conn-flag" });
+    clear(document.body).append(root, flag);
+
+    const saved = await Net.loadState().catch(() => null);
+    if (saved) Store.set(saved);
+    setLang(Store.state.lang || "en");
+
+    stage = new Stage(root, { interactive: false, chrome: false });
+
+    apply(true);
+
+    Net.on("state", async () => {
+      try { await Store.reload(); apply(false); }
+      catch (e) { /* keep showing the last content */ }
+    });
+    Net.on("cmd", (m) => {
+      if (!m || (m.screenId && m.screenId !== screenId)) return;
+      if (m.cmd === "play") stage.play();
+      else if (m.cmd === "pause") stage.pause();
+      else if (m.cmd === "next") stage.next();
+      else if (m.cmd === "prev") stage.prev();
+      else if (m.cmd === "reload") location.reload();
+    });
+    Net.on("link", (up) => flag.classList.toggle("show", !up));
+
+    // heartbeat so the desk can show On air / Not connected
+    const beat = () => Net.beat({ screenId, at: Date.now(), ua: navigator.userAgent.slice(0, 60) });
+    beat();
+    setInterval(beat, 3000);
+
+    // re-check the schedule every 10s; switching playlists is seamless
+    setInterval(() => apply(false), 10000);
+
+    // in browser-local mode there is no push channel from another profile,
+    // so poll storage as a safety net
+    if (Net.mode === "local") setInterval(async () => {
+      try { await Store.reload(); apply(false); } catch (e) { /* ignore */ }
+    }, 4000);
+
+    keepAwake();
+    window.addEventListener("visibilitychange", () => { if (!document.hidden) keepAwake(); });
+    document.addEventListener("dblclick", () => document.documentElement.requestFullscreen?.());
+  }
+
+  function apply(first) {
+    const s = Store.screen(screenId);
+    if (!s) return;
+    const cfg = s.live;
+    stage.setScreen(s);
+    if (!cfg) { return; }
+    const res = resolvePlaylist(cfg, Store.state.settings.tz || "Asia/Riyadh");
+    const pl = res ? res.playlist : null;
+    const sig = JSON.stringify([s.liveRev, cfg.blackout, pl && pl.id, pl && pl.items, cfg.widgets, cfg.transition, cfg.transitionMs, cfg.loop, cfg.shuffle]);
+    if (sig === lastSig && !first) return;
+    lastSig = sig;
+    const switched = pl && pl.id !== lastPlaylistId;
+    lastPlaylistId = pl ? pl.id : null;
+    void switched;
+    stage.apply(cfg, pl);
+  }
+
+  async function keepAwake() {
+    try { if ("wakeLock" in navigator) await navigator.wakeLock.request("screen"); }
+    catch (e) { /* not critical */ }
+  }
+
+  return { start };
+})();
+
+/* ------------------------------------------------------------
+   Routing: /display/<id> when a sync server is serving the app,
+   #/display/<id> when the file is opened directly.
+   ------------------------------------------------------------ */
+function routeOf() {
+  const hash = location.hash.match(/^#\/display\/([\w-]+)/);
+  if (hash) return hash[1];
+  const path = location.pathname.match(/\/display\/([\w-]+)\/?$/);
+  if (path) return path[1];
+  return null;
+}
+
+(async function boot() {
+  await Net.init();
+  const id = routeOf();
+  if (id) Display.start(id);
+  else App.start();
+  window.addEventListener("hashchange", () => location.reload());
+})();
+
+</script>
+</body>
+</html>
