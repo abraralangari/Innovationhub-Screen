@@ -47,9 +47,15 @@ function broadcast(msg) {
 setInterval(() => { for (const res of clients) { try { res.write(": ping\n\n"); } catch (e) { clients.delete(res); } } }, 25000);
 
 /* ---------- helpers ---------- */
+const CORS = {
+  "access-control-allow-origin": "*",
+  "access-control-allow-headers": "content-type, x-client, range",
+  "access-control-allow-methods": "GET, POST, DELETE, OPTIONS",
+  "access-control-expose-headers": "content-range, accept-ranges, content-length"
+};
 const json = (res, code, obj) => {
   const body = JSON.stringify(obj);
-  res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store" });
+  res.writeHead(code, { "content-type": "application/json; charset=utf-8", "cache-control": "no-store", ...CORS });
   res.end(body);
 };
 function readBody(req, limit = MAX_UPLOAD) {
@@ -70,6 +76,7 @@ async function serveFile(req, res, file) {
   let stat;
   try { stat = await fsp.stat(file); } catch (e) { res.writeHead(404); return res.end("Not found"); }
   const type = MIME[path.extname(file).toLowerCase()] || "application/octet-stream";
+  const cors = file.startsWith(MEDIA) ? CORS : {};
   const range = req.headers.range;
   if (range) {
     const m = /bytes=(\d*)-(\d*)/.exec(range);
@@ -78,6 +85,7 @@ async function serveFile(req, res, file) {
     if (isNaN(start) || start >= stat.size) { res.writeHead(416, { "content-range": `bytes */${stat.size}` }); return res.end(); }
     end = Math.min(end, stat.size - 1);
     res.writeHead(206, {
+      ...cors,
       "content-type": type,
       "content-length": end - start + 1,
       "content-range": `bytes ${start}-${end}/${stat.size}`,
@@ -86,6 +94,7 @@ async function serveFile(req, res, file) {
     return fs.createReadStream(file, { start, end }).pipe(res);
   }
   res.writeHead(200, {
+    ...cors,
     "content-type": type,
     "content-length": stat.size,
     "accept-ranges": "bytes",
@@ -100,6 +109,8 @@ const server = http.createServer(async (req, res) => {
   const p = decodeURIComponent(url.pathname);
 
   try {
+    if (req.method === "OPTIONS") { res.writeHead(204, CORS); return res.end(); }
+
     if (p === "/api/ping") return json(res, 200, { signage: true, version: 1 });
 
     if (p === "/api/state" && req.method === "GET") {
@@ -125,6 +136,7 @@ const server = http.createServer(async (req, res) => {
 
     if (p === "/api/events") {
       res.writeHead(200, {
+        ...CORS,
         "content-type": "text/event-stream",
         "cache-control": "no-cache, no-transform",
         connection: "keep-alive",
